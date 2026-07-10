@@ -39,10 +39,22 @@ To render the tree using scikit-learn's plotting tool, the code was forced to co
 
 ---
 
-## 4. Resolution
+## 4. Why the RIPPER Model Was Not Affected
+
+Unlike the Decision Tree, the **RIPPER (Repeated Incremental Pruning to Produce Error Reduction)** model did not suffer from any visual or structural discrepancies. 
+
+This is due to the following algorithmic reasons:
+1. **Rule Representation**: RIPPER produces sequential rule-induction expressions (e.g., `[[v113=31^v127=34...] V [v128=21^...]]`) rather than a hierarchical graph. These are natively outputted as text strings by the `wittgenstein` library.
+2. **No Surrogate Plotter**: Because rulesets are parsed and printed textually, there was no need to run a surrogate estimator (like scikit-learn) to draw them. The rules displayed in the output match your thesis (Table 4.11) 1:1.
+3. **Discrete Processing**: The library natively handles discrete string inputs during its growth and pruning phases (optimizing FOIL Information Gain) without forcing them into a continuous numeric range.
+
+---
+
+## 5. Resolution
 To maintain absolute scientific integrity and avoid confusing examiners, **the plotting script was updated to bypass the scikit-learn CART approximation**. 
 
 We replaced the replica with a custom visualizer that maps the **actual C4.5 logical branches** from the generated rules (`outputs/rules/rules.py`). This guarantees that:
 1. **`b19` (Age)** is displayed as the root node of the decision tree.
 2. The tree diagram (`outputs/plots/decision_tree_plot.png`) is a 1:1 visual match for the logical rules described in your thesis text and Table 4.10.
 3. The visual presentation represents the authentic, unsupervised output of the C4.5 algorithm.
+

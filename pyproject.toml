@@ -1,0 +1,13 @@
+[project]
+name = "msc-malaria"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "chefboost==0.0.19",
+    "imblearn==0.0",
+    "matplotlib==3.11.0",
+    "numpy==2.5.1",
+    "pandas==3.0.3",
+    "scikit-learn==1.9.0",
+    "wittgenstein==0.3.5",
+]

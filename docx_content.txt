@@ -1,0 +1,47 @@
+Comprehensive Data Analysis Pathway: From Preprocessing to Chapter 4
+Step 1: Categorical Mapping, Value Stabilization, and Index Tracking
+Before applying any resampling algorithm or model induction, you must explicitly separate, stabilize, and label your feature types so Python knows how to process them. While Appendix A successfully isolated your Social Determinants of Health (SDOH) theoretical feature space, several nominal and ordinal features imported from the Stata .DTA files still contain system factor labels or raw codes that transparent white-box models can misinterpret or that can cause downstream computational failures.
+Action: Convert columns like v106 (Maternal Education), v127–v129 (Main Floor, Wall, and Roof Materials), v113 (Source of Drinking Water), and v116 (Type of Toilet Facility) into explicit string categories or clean label-encoded values using pandas or scikit-learn, rather than leaving them as raw, unmapped types.
+Crucial Sub-step & Index Tracking: Identify and record the exact column index positions (or explicit string names) of every nominal variable in the feature matrix. This tracking array is strictly required by the SMOTENC algorithm downstream so it can programmatically separate categorical dimensions from continuous variables during synthetic point generation.
+Feature Constraints & Validation Rules:
+Ordinal Constraint (v190): Ensure v190 is treated strictly as its pre-calculated ordinal wealth quintile categories (1–5, ranging from Poorest to Richest) without altering its underlying distribution. You must avoid running any manual Principal Component Analysis (PCA), as the DHS analytical team has already mathematically optimized this specific socioeconomic asset index space.
+Continuous Vector Space (b19): Retain b19 (Child's Age in Months) strictly as a continuous integer or float array. This preserves its exact mathematical variance, allowing the hybrid oversampler to apply linear interpolation and enabling the tree-splitting algorithms (C4.5) to programmatically calculate optimal binary split thresholds ($\theta$).
+Step 2: Survey Weight Normalization & Baseline Complex Survey Diagnostics
+In demographic cluster surveys like the NMIS, observations do not have an equal probability of selection due to stratified two-stage cluster sampling. To generate statistically valid population estimates for rural Nasarawa State, you must account for the complex survey design immediately after value stabilization and before any partitioning or resampling occurs.
+Action: Normalize the raw individual sample weight variable v005 by dividing it by 1,000,000 to obtain the true fractional analytical weights:$$\text{Analytical Weight} = \frac{\text{v005}}{1000000}$$
+Execution: Run your descriptive diagnostics on the entire, un-resampled dataset using the normalized weights to compute the true population characteristics based on the following formula for any category $c$ of feature $X$:$$\text{Weighted Percentage}_c = \left( \frac{\sum_{i=1}^{n} w_i \cdot I(x_i = c)}{\sum_{i=1}^{n} w_i} \right) \times 100$$where $w_i$ is the normalized analytical weight for child $i$, and $I(x_i = c)$ is an indicator function returning 1 if the condition is met and 0 otherwise.
+Deliverables:
+Weighted Univariate Analysis: Quantifying baseline socio-demographic, maternal, environmental, and behavioral characteristics of your rural Nasarawa cohort.
+Weighted Bivariate Analysis: Cross-tabulating each SDOH predictor against the binary microscopy outcome hml32 to calculate localized, unadjusted malaria prevalence.
+Class Distribution Diagnostic: Assessing the exact scale of target class imbalance (hml32) to mathematically justify the subsequent oversampling phase.
+Step 3: Establish the Validation Partition via Stratified Train-Test Splitting
+To safeguard your models against data leakage and guarantee reproducible performance metrics on unseen clinical scenarios, you must structurally segregate your data arrays.
+Action: Separate your predictors vector ($X$) from your ground-truth microscopy target vector ($Y = \text{`hml32`}$). Drop all identification, administrative, and sampling weight tracking metadata columns (v005, hv001, hv002, hvidx, analytical_weight) from the feature space ($X$) so that the classifiers train purely on structural and environmental exposures.
+Execution Rule: Use sklearn.model_selection.train_test_split to divide the dataset into a training split (e.g., 75% or 80%) and an isolated testing split (25% or 20%). You must enforce stratified splitting (stratify=y) to ensure that the low baseline target prevalence calculated in Step 2 is mirrored identically across both partitions.
+Step 4: Execute Data-Level Resampling via SMOTENC
+Because your rural cohort features a heavy target class imbalance where microscopy-negative records dominate positive cases, standard classifiers will suffer from a high-specificity, zero-sensitivity classification bias. However, standard SMOTE is restricted to continuous features and will corrupt your nominal categorical codes with invalid fractional decimals.
+Action: Apply the Synthetic Minority Over-sampling Technique for Nominal and Continuous (SMOTENC) algorithm strictly to the training partition only.
+Algorithmic Operation: Pass your tracked nominal feature index array (established in Step 1) into the algorithm configuration. For the continuous attribute b19, SMOTENC will compute standard linear interpolations between a minority instance and its $k$-nearest neighbors. For your nominal attributes (e.g., dwelling materials, net usage, water sources), it computes a modified value distance metric and assigns the local structural mode (the most frequent category among those neighbors) to the newly generated synthetic instance.
+Output: A perfectly balanced training matrix ($\tilde{X}_{\text{train}}$, $\tilde{y}_{\text{train}}$) composed completely of structurally valid, non-fractional features.
+Step 5: Induce White-Box Model Parity (C4.5 Decision Trees)
+With your training split balanced and structurally sound, you can now generate your first intrinsically interpretable model designed to extract explicit epidemiological pathways.
+Action: Configure your balanced training data within the ChefBoost framework, specifying C4.5 as the core machine learning engine.
+Algorithmic Computations: The algorithm recursively constructs your classification tree by calculating Claude Shannon's Information Entropy and optimizing the split Gain Ratio at every decision node:$$H(S) = -\sum_{i=1}^{c} p_i \log_2 p_i$$$$GainRatio(A) = \frac{IG(S, A)}{SplitInfo(S, A)}$$
+Pruning & Output: Run the algorithm’s bottom-up error post-pruning phase using your validation data to clip overfitted branches. Export the final decision tree topology as un-nested, human-readable IF-THEN conditional statement blocks.
+Step 6: Induct Separate-and-Conquer Rulesets (RIPPER Classifier)
+To discover compact, highly specific associative rulesets using an alternative logical structure, you will deploy a sequential covering architecture.
+Action: Train a RIPPER (Repeated Incremental Pruning to Produce Error Reduction) classifier over your balanced training arrays using the Python wittgenstein library framework.
+Mechanics: The model will isolate positive malaria instances, adding conditional antecedents to its rules by maximizing First-Order Inductive Learner ($FOIL$) Information Gain:$$FOIL_{IG} = p_1 \times \left( \log_2 \frac{p_1}{p_1 + n_1} - \log_2 \frac{p_0}{p_0 + n_0} \right)$$
+Pruning & Stopping: The algorithm drops weak or overly specific rule components against an internal validation hold-out set via the incremental pruning metric $v = \frac{P - N}{P + N}$. It will automatically terminate rule generation when the Minimum Description Length (MDL) 64-bit threshold is triggered. Output the final consolidated rules list.
+Step 7: Construct Black-Box Benchmarking Baselines
+To validate the necessity of your white-box models within a computer science framework, you must establish traditional, high-dimensional empirical baselines.
+Action: Train an ensemble RandomForestClassifier and a kernel-based Support Vector Machine (SVC) model over your balanced training split.
+Optimization: Use cross-validated grid searches (GridSearchCV) to tune their respective hyperparameter boundaries (e.g., number of estimators, max depth, kernel type, and regularization $C$ values) to ensure you are comparing your white-box models against optimized black-box baselines.
+Step 8: Programmatic Evaluation Matrix and Complexity Profiling on Unseen Test Partition
+To complete your analysis, pass your pristine, unweighted, and un-resampled testing partition (retained in Step 3) through all four finalized model configurations.
+Action: Evaluate predictions against your test ground-truth targets (hml32) using sklearn.metrics.
+Performance Metrics: Construct Confusion Matrices to extract Global Accuracy, Precision, Macro F1-Score, and Sensitivity/Recall (true positive detection rate). Plot a comparative Area Under the Receiver Operating Characteristic (AUC-ROC) curve graph mapping all four algorithms on a single coordinate plane.
+Complexity Metrics: Formally profile your white-box outputs by extracting:
+The absolute number of terminal logical rules generated by C4.5 versus RIPPER.
+The mean number of conditional conjuncts (literals) per rule line.
+A formal accuracy-versus-interpretability trade-off matrix to show what degree of statistical precision was exchanged for complete clinical transparency.

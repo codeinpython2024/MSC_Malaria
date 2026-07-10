@@ -168,3 +168,72 @@ print("\n" + "="*80)
 print("STEP 2 DIAGNOSTICS COMPLETE. All baseline characteristics and complex survey design")
 print("weighted statistics successfully mapped.")
 print("="*80)
+
+# ------------------------------------------------------------------------------
+# DELIVERABLE 3: GRAPHICAL REPRESENTATION OF SDOH PREVALENCE TABLES
+# ------------------------------------------------------------------------------
+print("\n[3] Generating graphical representations of SDOH prevalence...")
+try:
+    import matplotlib.pyplot as plt
+    import os
+    
+    os.makedirs(os.path.join("outputs", "plots"), exist_ok=True)
+    
+    # We will plot 4 key variables: v190, v106, hml20, v127
+    plot_features = ['v190', 'v106', 'hml20', 'v127']
+    
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12), dpi=300)
+    axes = axes.flatten()
+    
+    for idx, feature in enumerate(plot_features):
+        ax = axes[idx]
+        
+        # Calculate weighted prevalence
+        group_weighted_sums = final_ml_matrix.groupby(feature)['analytical_weight'].sum()
+        group_malaria_positive_weight = final_ml_matrix[final_ml_matrix['hml32'] == 1.0].groupby(feature)['analytical_weight'].sum()
+        group_malaria_positive_weight = group_malaria_positive_weight.reindex(group_weighted_sums.index, fill_value=0.0)
+        group_malaria_prevalence = (group_malaria_positive_weight / group_weighted_sums) * 100
+        
+        categories = [value_mappings[feature].get(str(cat), str(cat)) for cat in group_weighted_sums.index]
+        prevalences = group_malaria_prevalence.values
+        
+        bars = ax.bar(categories, prevalences, color='#1f77b4', edgecolor='none', alpha=0.85, width=0.5)
+        
+        # Style the subplots
+        ax.set_title(f"Malaria Prevalence by {feature_labels[feature]}", fontsize=12, fontweight='bold', pad=10)
+        ax.set_ylabel("Weighted Prevalence (%)", fontsize=10)
+        ax.set_ylim(0, max(prevalences) * 1.15 if len(prevalences) > 0 and max(prevalences) > 0 else 10)
+        ax.grid(True, linestyle=':', alpha=0.6, color='#cbcbcb', axis='y')
+        
+        # Add value labels on top of the bars
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(f'{height:.1f}%',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom', fontsize=9, fontweight='semibold')
+                        
+        # Rotate x labels if they are long
+        if feature in ['v127', 'v106']:
+            ax.set_xticklabels(categories, rotation=20, ha='right', fontsize=9)
+        else:
+            ax.set_xticklabels(categories, fontsize=9)
+            
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#888888')
+        ax.spines['bottom'].set_color('#888888')
+        
+    plt.suptitle("Malaria Microscopy Prevalence by Social Determinants of Health (SDOH)\n(Rural Nasarawa State, Weighted Analysis)", 
+                 fontsize=15, fontweight='bold', y=0.98)
+    plt.tight_layout()
+    plot_path = os.path.join("outputs", "plots", "sdoh_prevalence.png")
+    plt.savefig(plot_path, dpi=300)
+    plt.close()
+    print(f" - SDOH Prevalence graph successfully exported to: {plot_path}")
+except Exception as e:
+    print(f"Error plotting SDOH prevalence: {e}")
+    import traceback
+    traceback.print_exc()
+

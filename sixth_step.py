@@ -363,6 +363,107 @@ for row in tradeoff_rows:
     print(f"{row[0]:<25} | {row[1]:<28} | {acc_str:<8} | {f1_str:<8} | {sens_str:<11} | {str(row[5]):<11} | {str(row[6]):<12}")
 print("="*95)
 
+# ------------------------------------------------------------------------------
+# 8. GENERATE ADDITIONAL GRAPHICAL OUTPUTS
+# ------------------------------------------------------------------------------
+print("\n[8] Generating remaining evaluation plots...")
+try:
+    # 8A. Model Performance Comparison Grouped Bar Chart
+    models = [res['Name'] for res in results]
+    metrics = ['Accuracy', 'Precision', 'Sensitivity (Recall)', 'Specificity', 'Macro F1']
+    metric_labels = ['Accuracy', 'Precision', 'Sensitivity', 'Specificity', 'Macro F1']
+    
+    x = np.arange(len(models))
+    width = 0.15
+    
+    plt.figure(figsize=(12, 7), dpi=300)
+    for idx, metric in enumerate(metrics):
+        values = [res[metric] for res in results]
+        plt.bar(x + idx * width - (len(metrics) - 1) * width / 2, values, width, label=metric_labels[idx])
+        
+    plt.title("Model Performance Comparison (Clinical Test Partition)", fontsize=14, fontweight='bold', pad=15)
+    plt.xticks(x, models, fontsize=10)
+    plt.ylabel("Score", fontsize=11, fontweight='bold')
+    plt.ylim(0, 1.1)
+    plt.legend(loc='lower left', frameon=True, facecolor='white', edgecolor='#e2e2e2')
+    plt.grid(True, linestyle=':', alpha=0.6, color='#cbcbcb', axis='y')
+    
+    ax = plt.gca()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color('#888888')
+    ax.spines['bottom'].set_color('#888888')
+    
+    perf_plot_path = os.path.join("outputs", "plots", "model_performance_comparison.png")
+    plt.tight_layout()
+    plt.savefig(perf_plot_path, dpi=300)
+    plt.close()
+    print(f" - Model performance comparison plot exported to: {perf_plot_path}")
+    
+    # 8B. Confusion Matrix Heatmaps
+    fig, axes = plt.subplots(2, 2, figsize=(10, 10), dpi=300)
+    axes = axes.flatten()
+    for idx, res in enumerate(results):
+        ax = axes[idx]
+        cm = res['CM']
+        cax = ax.matshow(cm, cmap='Blues', alpha=0.6)
+        for (i, j), val in np.ndenumerate(cm):
+            ax.text(j, i, f'{val}', ha='center', va='center', fontsize=16, fontweight='bold')
+            
+        ax.set_title(res['Name'], fontsize=12, fontweight='bold', pad=10)
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(['Negative', 'Positive'], fontsize=10)
+        ax.set_yticks([0, 1])
+        ax.set_yticklabels(['Negative', 'Positive'], fontsize=10)
+        ax.tick_params(axis="both", which="both", bottom=True, top=False, labelbottom=True, labeltop=False)
+        ax.set_xlabel('Predicted Label', fontsize=10)
+        ax.set_ylabel('True Label', fontsize=10)
+        
+    plt.suptitle("Confusion Matrix Heatmaps (Clinical Test Partition)", fontsize=15, fontweight='bold', y=0.98)
+    plt.tight_layout()
+    cm_plot_path = os.path.join("outputs", "plots", "confusion_matrices.png")
+    plt.savefig(cm_plot_path, dpi=300)
+    plt.close()
+    print(f" - Confusion matrices heatmap plot exported to: {cm_plot_path}")
+    
+    # 8C. Accuracy-vs-Interpretability Scatter Plot
+    model_names = [row[0] for row in tradeoff_rows]
+    f1_scores = [row[3] for row in tradeoff_rows]
+    complexities = [46, 2, 300, 350]  # Rules counts/size proxies for plotting
+    complexity_labels = ['46 Rules\n(C4.5 Tree)', '2 Rules\n(RIPPER Ruleset)', '300 Trees\n(Random Forest)', 'Kernel Space\n(SVM)']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
+    
+    plt.figure(figsize=(10, 6), dpi=300)
+    for i in range(len(model_names)):
+        plt.scatter(complexities[i], f1_scores[i], color=colors[i], s=180, zorder=5, label=model_names[i])
+        plt.annotate(complexity_labels[i], (complexities[i], f1_scores[i]), 
+                     textcoords="offset points", xytext=(0,10), ha='center', fontsize=9, fontweight='semibold')
+                     
+    plt.title("Accuracy-versus-Interpretability Trade-off Frontier", fontsize=13, fontweight='bold', pad=15)
+    plt.xlabel("Model Complexity / Feature Space (Size Proxy)", fontsize=11, fontweight='bold')
+    plt.ylabel("Macro F1-score", fontsize=11, fontweight='bold')
+    plt.xlim(-30, 420)
+    plt.ylim(min(f1_scores) - 0.05, max(f1_scores) + 0.08)
+    plt.grid(True, linestyle=':', alpha=0.6, color='#cbcbcb')
+    
+    ax = plt.gca()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color('#888888')
+    ax.spines['bottom'].set_color('#888888')
+    
+    tradeoff_plot_path = os.path.join("outputs", "plots", "interpretability_vs_accuracy.png")
+    plt.tight_layout()
+    plt.savefig(tradeoff_plot_path, dpi=300)
+    plt.close()
+    print(f" - Interpretability vs accuracy trade-off plot exported to: {tradeoff_plot_path}")
+    
+except Exception as e:
+    print(f"Error generating additional graphical outputs: {e}")
+    import traceback
+    traceback.print_exc()
+
 print("\n" + "="*80)
 print("STAGE 8 CLINICAL TESTING AND PROFILING SUCCESSFULLY COMPLETED")
 print("="*80)
+

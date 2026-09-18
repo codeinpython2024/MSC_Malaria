@@ -1,0 +1,158 @@
+﻿Loading files: NGKR81DT\NGKR81FL.DTA and NGPR81DT\NGPR81FL.DTA...
+Executing demographic and residency subsetting...
+Applying geopolitical spatial constraints...
+Total target cohort isolated: 245 rural Nasarawa children.
+Mapping relational bridging keys and executing Left Join...
+Cleaning target class and algorithmic predictors...
+Extracting final SDOH theoretical feature space...
+==============================================================================
+PIPELINE COMPLETE. Final ML Matrix shape: (243, 17)
+Successfully saved final ML matrix to pre_processed_malaria_sdoh_matrix.csv
+Ready for categorical discretization and rule-based induction.
+==============================================================================
+Executing Step 1: Categorical Mapping, Value Stabilization, and Index Tracking...
+==============================================================================
+STEP 1 COMPLETE. Verified Feature Subspaces:
+ - Continuous Features: ['b19']
+ - Nominal/Categorical Features: ['b4', 'v106', 'v190', 'v119', 'v158', 'v127', 'v128', 'v129', 'v113', 'v116', 'hml20']
+ - Tracked Categorical Indices for SMOTENC: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+ - Stabilized dataset successfully written to final_malaria_sdoh_matrix.csv
+==============================================================================
+Executing Step 2: Survey Weight Normalization & Baseline Complex Survey Diagnostics...
+Total Cohort Size: 243 children.
+Sum of Analytical Weights: 185.0152
+
+================================================================================
+DELIVERABLE 1: TARGET CLASS DISTRIBUTION DIAGNOSTIC (hml32 - Malaria Microscopy)
+================================================================================
+                Raw Count  Raw Pct (%)  Weighted Sum  Weighted Pct (%)
+hml32                                                                 
+Negative (0.0)        198        81.48      150.3064             81.24
+Positive (1.0)         45        18.52       34.7088             18.76
+--------------------------------------------------------------------------------
+Mathematical Class Imbalance Ratio (Weighted): 4.33:1 (Negative to Positive)
+================================================================================
+
+================================================================================
+DELIVERABLE 2: WEIGHTED UNIVARIATE & BIVARIATE COMPREHENSIVE SDOH ANALYSIS
+================================================================================
+
+Feature: b19 - Child's Age (Months)
+------------------------------------------------------------
+Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+  6-11 months         27             10.45                             6.80
+ 12-23 months         55             23.57                            17.57
+ 24-35 months         38             15.01                            16.84
+ 36-47 months         66             26.28                            18.77
+ 48-59 months         57             24.70                            26.11
+------------------------------------------------------------
+
+Feature: b4 - Child's Sex
+------------------------------------------------------------
+Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+     1 (Male)        126             50.94                            15.37
+   2 (Female)        117             49.06                            22.28
+------------------------------------------------------------
+
+Feature: v106 - Maternal Education Level
+------------------------------------------------------------
+   Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+0 (No Education)        181             72.16                            19.60
+     1 (Primary)         17              7.98                            23.69
+   2 (Secondary)         42             18.62                            14.64
+      3 (Higher)          3              1.24                             0.00
+------------------------------------------------------------
+
+Feature: v190 - Wealth Quintile
+------------------------------------------------------------
+Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+  1 (Poorest)         72             30.08                            22.69
+   2 (Poorer)         68             27.30                            19.71
+   3 (Middle)         82             35.12                            15.78
+   4 (Richer)         21              7.50                            13.48
+------------------------------------------------------------
+
+Feature: v119 - Household Has Electricity
+------------------------------------------------------------
+Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+       0 (No)        236             96.45                            18.61
+      1 (Yes)          7              3.55                            22.95
+------------------------------------------------------------
+
+Feature: v158 - Frequency of Listening to Radio
+------------------------------------------------------------
+            Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+           0 (Not at all)        204             85.22                            19.30
+1 (Less than once a week)         10              3.87                             0.00
+ 2 (At least once a week)         29             10.91                            21.19
+------------------------------------------------------------
+
+Feature: v127 - Main Floor Material
+------------------------------------------------------------
+     Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+   11 (Earth/sand)        106             46.58                            17.73
+         12 (Dung)          2              0.89                            50.00
+  21 (Wood planks)          1              0.43                             0.00
+  22 (Palm/bamboo)          4              1.49                            23.37
+33 (Ceramic tiles)          5              2.05                             0.00
+       34 (Cement)        121             47.16                            19.10
+        96 (Other)          4              1.39                            50.00
+------------------------------------------------------------
+
+Feature: v128 - Main Wall Material
+------------------------------------------------------------
+       Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+       11 (No walls)          6              2.71                             9.24
+           13 (Dirt)          1              0.43                           100.00
+21 (Bamboo with mud)         61             28.68                            25.55
+ 22 (Stone with mud)         27              9.47                            11.85
+         31 (Cement)        134             53.01                            16.49
+         33 (Bricks)          8              3.08                             0.00
+  34 (Cement blocks)          2              0.83                             0.00
+          96 (Other)          4              1.79                            50.00
+------------------------------------------------------------
+
+Feature: v129 - Main Roof Material
+------------------------------------------------------------
+        Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+12 (Thatch/palm leaf)          8              2.90                            20.64
+           13 (Grass)         17              7.43                            15.39
+     22 (Palm/bamboo)         32             13.13                            21.85
+      31 (Metal/Zinc)        186             76.54                            18.49
+------------------------------------------------------------
+
+Feature: v113 - Source of Drinking Water
+------------------------------------------------------------
+                          Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+              14 (Public tap/standpipe)          1              0.39                             0.00
+                21 (Tube well/borehole)         56             31.85                            17.43
+                    31 (Protected well)         95             32.20                            23.62
+                  32 (Unprotected well)         35             14.11                            17.32
+43 (Surface water (River/stream/canal))         56             21.45                            14.73
+------------------------------------------------------------
+
+Feature: v116 - Type of Toilet Facility
+------------------------------------------------------------
+                         Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+                   11 (Flush to sewer)          1              0.41                             0.00
+             12 (Flush to septic tank)          9              3.22                            21.96
+                      21 (VIP latrine)          2              0.71                             0.00
+            22 (Pit latrine with slab)         70             25.83                            16.46
+23 (Pit latrine without slab/open pit)         13              5.05                            14.45
+           31 (No facility/bush/field)        148             64.78                            20.18
+------------------------------------------------------------
+
+Feature: hml20 - Child Slept Under LLIN
+------------------------------------------------------------
+Category Name  Raw Count  Weighted Pct (%)  Weighted Malaria Prevalence (%)
+       0 (No)        207             87.36                            20.09
+      1 (Yes)         36             12.64                             9.59
+------------------------------------------------------------
+
+================================================================================
+STEP 2 DIAGNOSTICS COMPLETE. All baseline characteristics and complex survey design
+weighted statistics successfully mapped.
+================================================================================
+
+[3] Generating graphical representations of SDOH prevalence...
+ - SDOH Prevalence graph successfully exported to: outputs\plots\sdoh_prevalence.png

@@ -1,0 +1,107 @@
+================================================================================
+EXECUTION LOG: Stage 7: Comparative Evaluation, Calibrated ROC & Trade-off Matrix
+Script: sixth_step.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 5.93 seconds
+Exit Code: 0
+================================================================================
+
+findfont: Failed to find font weight medium, now using 400.
+================================================================================
+STAGE 8: JOINT PROGRAMMATIC EVALUATION AND STRUCTURAL COMPLEXITY PROFILING
+================================================================================
+
+[1/7] Ingesting datasets...
+Loaded successfully:
+ - Train resampled instances: 316
+ - Test clinical instances: 49
+
+[2/7] Customizing datatypes for model spaces...
+ - Datatypes partitioned and stabilized.
+
+[3/7] Loading models and generating predictions...
+ - Dynamically imported compiled C4.5 rules.py successfully.
+ - Generated discrete predictions for C4.5 Decision Tree.
+ - Item 11 Fix: Generated continuous calibrated leaf posterior probabilities for C4.5.
+ - Generated predictions and probabilities for Logistic Regression Baseline.
+ - Ingesting Wittgenstein and training RIPPER ruleset on-the-fly...
+ - Generated predictions and probability outputs for RIPPER.
+ - Loaded serialized Random Forest pipeline from: outputs\models\random_forest_pipeline.pkl
+ - Generated predictions and probability outputs for Random Forest.
+ - Loaded serialized SVM pipeline from: outputs\models\svm_pipeline.pkl
+ - Generated predictions and probability outputs for SVM.
+
+[4/7] Generating comparative evaluation metrics...
+
+================================================================================
+PERFORMANCE EVALUATION MATRIX (CLINICAL TEST SET, N=49)
+================================================================================
+Classifier Model             | Accuracy | Precision | Sensitivity | Specificity | Macro F1
+----------------------------------------------------------------------------------------
+C4.5 Decision Tree           | 0.5714   | 0.1667    | 0.3333      | 0.6250      | 0.4632  
+RIPPER Ruleset               | 0.7551   | 0.0000    | 0.0000      | 0.9250      | 0.4302  
+Random Forest                | 0.7347   | 0.2500    | 0.2222      | 0.8500      | 0.5374  
+Support Vector Machine       | 0.7551   | 0.3333    | 0.3333      | 0.8500      | 0.5917  
+================================================================================
+
+[C4.5 Decision Tree] Confusion Matrix:
+[[25 15]
+ [ 6  3]]
+
+[RIPPER Ruleset] Confusion Matrix:
+[[37  3]
+ [ 9  0]]
+
+[Random Forest] Confusion Matrix:
+[[34  6]
+ [ 7  2]]
+
+[Support Vector Machine] Confusion Matrix:
+[[34  6]
+ [ 6  3]]
+
+[5/7] Graphing comparative Receiver Operating Characteristic (ROC) curves...
+ - Computed ROC for Logistic Regression (Linear Baseline) (AUC = 0.6028)
+ - Computed ROC for Random Forest (Ensemble Benchmark) (AUC = 0.5194)
+ - Computed ROC for Support Vector Machine (RBF Kernel) (AUC = 0.5083)
+ - Computed ROC for C4.5 Decision Tree (Calibrated Leaf) (AUC = 0.4653)
+ - Computed ROC for RIPPER Ruleset (Rule-Confidence Curve) (AUC = 0.4625)
+
+ - Premium ROC graph successfully exported and persisted to: outputs\plots\roc_comparison.png
+
+[6/7] Programmatically parsing rulesets for structural complexity...
+ - Successfully parsed ChefBoost C4.5 rules.py.
+ - Successfully parsed Wittgenstein RIPPER ruleset object.
+
+================================================================================
+STRUCTURAL COMPLEXITY PROFILE SUMMARY
+================================================================================
+C4.5 Decision Tree:
+ - Absolute Terminal Rules (Leaf Paths): 46
+ - Mean Number of Conditional Literals per path: 4.3913
+
+RIPPER Ruleset:
+ - Absolute Rule Statements: 2
+ - Mean Number of Conditional Conjuncts (Literals) per rule line: 4.5000
+================================================================================
+
+[7/7] Generating final Accuracy-versus-Interpretability Trade-Off Matrix...
+
+===============================================================================================
+Classifier Model          | Model Nature                 | Accuracy | Macro F1 | Sensitivity | Rules Count     | Mean Literals
+------------------------------------------------------------------------------------------------------------------------
+Logistic Regression       | White-Box (Linear Log-Odds)  | 0.7143   | 0.5236   | 0.2222      | 12 Coefficients | Linear (12) 
+C4.5 Decision Tree        | White-Box (Highly Transparent) | 0.5714   | 0.4632   | 0.3333      | 46              | 4.39        
+RIPPER Ruleset            | White-Box (Compact Rules)    | 0.7551   | 0.4302   | 0.0000      | 2               | 4.50        
+Random Forest             | Black-Box (Ensemble Bagging) | 0.7347   | 0.5374   | 0.2222      | N/A (300 Trees) | N/A         
+Support Vector Machine    | Black-Box (Kernel Margin)    | 0.7551   | 0.5917   | 0.3333      | N/A (Hilbert Space) | N/A         
+===============================================================================================
+
+[8] Generating remaining evaluation plots...
+ - Model performance comparison plot exported to: outputs\plots\model_performance_comparison.png
+ - Confusion matrices heatmap plot exported to: outputs\plots\confusion_matrices.png
+ - Interpretability vs accuracy trade-off plot exported to: outputs\plots\interpretability_vs_accuracy.png
+
+================================================================================
+STAGE 8 CLINICAL TESTING AND PROFILING SUCCESSFULLY COMPLETED
+================================================================================

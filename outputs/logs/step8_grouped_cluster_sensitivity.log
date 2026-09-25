@@ -1,0 +1,71 @@
+================================================================================
+EXECUTION LOG: Stage 9: Grouped Household & Cluster Sensitivity (5-Fold CV)
+Script: step8_grouped_cluster_sensitivity.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 11.44 seconds
+Exit Code: 0
+================================================================================
+
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+C:\MSC_Malaria\.venv\Lib\site-packages\sklearn\svm\_base.py:239: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+==========================================================================================
+STEP 8: GROUPED HOUSEHOLD & CLUSTER SENSITIVITY ANALYSIS (ITEM 8)
+==========================================================================================
+Analytic Cohort Structure:
+ - Total children: 243
+ - Microscopy Positive (hml32=1): 45 (18.52%)
+ - Unique Enumeration Areas (Clusters, hv001): 9
+ - Unique Households (hv001 + hv002): 139
+ - Mean children per household: 1.75
+
+--- Running 5-Fold Evaluation: Scheme A: Standard Stratified 5-Fold (Random Row Split) ---
+
+--- Running 5-Fold Evaluation: Scheme B: Household-Grouped 5-Fold (No Intra-Household Leakage) ---
+
+--- Running 5-Fold Evaluation: Scheme C: Cluster-Grouped 5-Fold (Unseen Rural Clusters) ---
+
+========================================================================================================================
+SENSITIVITY ANALYSIS SUMMARY: RANDOM SPLIT VS. HOUSEHOLD-GROUPED VS. CLUSTER-GROUPED (5-FOLD CV)
+========================================================================================================================
+Validation Paradigm                        | Model                    | Accuracy   | Sensitivity  | Specificity  | Macro F1   | ROC-AUC   | PR-AUC   
+--------------------------------------------------------------------------------------------------------------------------------------------
+Scheme A: Standard Stratified K-Fold       | Logistic Regression      | 59.67    % | 35.56      % | 65.14      % | 48.57    % | 0.5218    | 0.2239   
+Scheme A: Standard Stratified K-Fold       | Random Forest            | 68.28    % | 13.33      % | 80.73      % | 46.03    % | 0.4658    | 0.1763   
+Scheme A: Standard Stratified K-Fold       | Support Vector Machine   | 74.49    % | 15.56      % | 87.86      % | 50.53    % | 0.4727    | 0.2076   
+Scheme B: Household-Grouped K-Fold         | Logistic Regression      | 64.27    % | 36.31      % | 71.38      % | 50.20    % | 0.5330    | 0.2266   
+Scheme B: Household-Grouped K-Fold         | Random Forest            | 72.03    % | 16.55      % | 84.69      % | 50.04    % | 0.4349    | 0.2177   
+Scheme B: Household-Grouped K-Fold         | Support Vector Machine   | 77.80    % | 8.69       % | 93.90      % | 49.21    % | 0.4518    | 0.1896   
+Scheme C: Cluster-Grouped K-Fold           | Logistic Regression      | 61.17    % | 34.32      % | 66.63      % | 46.89    % | 0.5506    | 0.2526   
+Scheme C: Cluster-Grouped K-Fold           | Random Forest            | 70.83    % | 21.32      % | 82.10      % | 50.87    % | 0.4760    | 0.2635   
+Scheme C: Cluster-Grouped K-Fold           | Support Vector Machine   | 79.13    % | 2.50       % | 96.83      % | 45.96    % | 0.4668    | 0.2058   
+========================================================================================================================
+
+Exported sensitivity analysis results to outputs/grouped_cluster_sensitivity_results.csv

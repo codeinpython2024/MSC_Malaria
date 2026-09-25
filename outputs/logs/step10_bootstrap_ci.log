@@ -1,0 +1,32 @@
+================================================================================
+EXECUTION LOG: Stage 11: Non-Parametric Bootstrap Evaluation (B=1000)
+Script: run_bootstrap_ci_final.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 16.98 seconds
+Exit Code: 0
+================================================================================
+
+Bootstrap evaluation completed successfully!
+
+========================================================================================================================
+Table 4.8 Comparative Algorithmic Performance Evaluation Matrix (Clinical Test Partition, N=49)
+Panel A: Primary Target (Minority Positive Class) Performance & Global Discrimination
+Model Architecture                     | Global Accuracy (%) [95% CI]   | Sensitivity (%) [95% CI]   | Precision (Pos) (%) [95% CI]   | F1-Score (Pos) (%) [95% CI]  | ROC-AUC [95% CI]       | PR-AUC [95% CI]       
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Majority Class (Zero-R Baseline)       | 81.63% (boot [71.4, 91.8]) | 0.00% (boot [0.0, 0.0]) | 0.00% [0.0, 0.0]               | 0.00% [0.0, 0.0]             | 0.5000 [—]             | 0.1837 [0.0816, 0.2857]
+Logistic Regression (Linear Baseline)  | 71.43% (boot [59.2, 83.7]) | 22.22% (boot [0.0, 54.5]) | 22.22% [0.0, 57.1]             | 22.22% [0.0, 46.2]           | 0.5472 [0.31, 0.76]    | 0.2001 [0.0714, 0.4581]
+C4.5 Decision Tree (White-Box)         | 57.14% (boot [42.9, 71.4]) | 33.33% (boot [0.0, 71.4]) | 16.67% [0.0, 36.9]             | 22.22% [0.0, 43.5]           | 0.4792 [0.30, 0.67]    | 0.3112 [0.0714, 0.5371]
+RIPPER Ruleset (White-Box)             | 75.51% (boot [61.2, 87.8]) | 0.00% (boot [0.0, 0.0]) | 0.00% [0.0, 0.0]               | 0.00% [0.0, 0.0]             | 0.4625 [0.42, 0.50]    | 0.0918 [0.0408, 0.5918]
+Random Forest (Ensemble Benchmark)     | 73.47% (boot [61.2, 85.7]) | 22.22% (boot [0.0, 54.6]) | 25.00% [0.0, 60.0]             | 23.53% [0.0, 50.0]           | 0.5194 [0.27, 0.77]    | 0.2025 [0.0793, 0.4234]
+Support Vector Classifier              | 75.51% (boot [63.3, 87.8]) | 33.33% (boot [0.0, 66.7]) | 33.33% [0.0, 66.7]             | 33.33% [0.0, 59.3]           | 0.5083 [0.25, 0.77]    | 0.2216 [0.0789, 0.5066]
+
+========================================================================================================================
+Panel B: Non-Target (Majority Negative Class) Performance & Macro-Averaged Balance
+Model Architecture                     | Specificity (%) [95% CI]   | Precision (Neg) (%) [95% CI]   | F1-Score (Neg) (%) [95% CI]  | Macro Avg F1 (%) [95% CI]  | Class Balance Diagnostic Profile
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Majority Class (Zero-R Baseline)       | 100.00% (boot [100.0, 100.0]) | 81.63% [71.4, 91.8]            | 89.89% [83.3, 95.7]          | 44.94% [41.7, 47.9]        | Trivial majority assignment
+Logistic Regression (Linear Baseline)  | 82.50% (boot [69.7, 93.3]) | 82.50% [69.2, 93.6]            | 82.50% [73.0, 90.5]          | 52.36% [39.5, 66.7]        | Symmetric error distribution
+C4.5 Decision Tree (White-Box)         | 62.50% (boot [47.5, 77.5]) | 80.65% [64.5, 93.8]            | 70.42% [56.2, 81.6]          | 46.32% [32.9, 60.6]        | Minority recall prioritized; lower specificity
+RIPPER Ruleset (White-Box)             | 92.50% (boot [83.3, 100.0]) | 80.43% [68.1, 91.3]            | 86.05% [75.9, 93.5]          | 43.02% [38.0, 46.7]        | Severe rule conservatism; 0% recall
+Random Forest (Ensemble Benchmark)     | 85.00% (boot [72.2, 95.1]) | 82.93% [70.3, 93.0]            | 83.95% [74.4, 92.0]          | 53.74% [40.2, 68.6]        | Moderate minority detection
+Support Vector Classifier              | 85.00% (boot [73.2, 95.2]) | 85.00% [73.2, 95.0]            | 85.00% [76.3, 92.7]          | 59.17% [43.0, 74.4]        | Optimal harmonic trade-off

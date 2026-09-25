@@ -1,0 +1,219 @@
+================================================================================
+EXECUTION LOG: Stage 5: White-Box Rule Induction (C4.5 & RIPPER)
+Script: fourth_step.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 7.70 seconds
+Exit Code: 0
+================================================================================
+
+================================================================================
+STAGE 5 & 6 PIPELINE: INDUCTION OF INTERPRETABLE WHITE-BOX MODELS
+================================================================================
+
+[1/4] Ingesting train and test splits...
+Successfully loaded datasets:
+ - Resampled Train instances: 316
+ - Stratified Test instances: 49
+
+[2/4] Sanitizing nominal vs continuous feature datatypes...
+ - Datatypes successfully locked down.
+
+--------------------------------------------------------------------------------
+STEP 5: C4.5 DECISION TREE INDUCTION (CHEFBOOST)
+ - Optimizing Claude Shannon's Information Entropy & Split Gain Ratio
+--------------------------------------------------------------------------------
+26-09-25 00:06:21 - C4.5 tree is going to be built...
+26-09-25 00:06:24 - -------------------------
+26-09-25 00:06:24 - finished in 2.95289945602417 seconds
+26-09-25 00:06:24 - -------------------------
+26-09-25 00:06:24 - Evaluate train set
+26-09-25 00:06:24 - -------------------------
+26-09-25 00:06:24 - Accuracy: 77.84810126582279% on 316 instances
+26-09-25 00:06:24 - Labels: ['Positive' 'Negative']
+26-09-25 00:06:24 - Confusion matrix: [[146, 58], [12, 100]]
+26-09-25 00:06:24 - Precision: 71.5686%, Recall: 92.4051%, F1: 80.663%
+
+ChefBoost C4.5 model trained successfully!
+
+=== GENERATED C4.5 RULES PATHS (outputs/rules/rules.py) ===
+def findDecision(obj): #obj[0]: b19, obj[1]: b4, obj[2]: v106, obj[3]: v190, obj[4]: v119, obj[5]: v158, obj[6]: v127, obj[7]: v128, obj[8]: v129, obj[9]: v113, obj[10]: v116, obj[11]: hml20
+   # {"feature": "b19", "instances": 316, "metric_value": 1.0, "depth": 1}
+   if obj[0]>6:
+      # {"feature": "v158", "instances": 311, "metric_value": 0.9998, "depth": 2}
+      if obj[5] == '0':
+         # {"feature": "hml20", "instances": 280, "metric_value": 0.9928, "depth": 3}
+         if obj[11] == '0':
+            # {"feature": "v113", "instances": 260, "metric_value": 0.9829, "depth": 4}
+            if obj[9] == '31':
+               # {"feature": "v129", "instances": 138, "metric_value": 0.817, "depth": 5}
+               if obj[8] == '31':
+                  return 'Positive'
+               elif obj[8] == '13':
+                  return 'Negative'
+               elif obj[8] == '22':
+                  return 'Negative'
+               elif obj[8] == '12':
+                  return 'Negative'
+               else:
+                  return 'Positive'
+            elif obj[9] == '43':
+               # {"feature": "v106", "instances": 56, "metric_value": 0.9963, "depth": 5}
+               if obj[2] == '0':
+                  return 'Positive'
+               elif obj[2] == '2':
+                  return 'Negative'
+               elif obj[2] == '1':
+                  return 'Negative'
+               else:
+                  return 'Negative'
+            elif obj[9] == '21':
+               # {"feature": "v128", "instances": 44, "metric_value": 0.9624, "depth": 5}
+               if obj[7] == '21':
+                  return 'Positive'
+               elif obj[7] == '31':
+                  return 'Negative'
+               elif obj[7] == '11':
+                  return 'Negative'
+               else:
+                  return 'Negative'
+            elif obj[9] == '32':
+               # {"feature": "v128", "instances": 22, "metric_value": 0.684, "depth": 5}
+               if obj[7] == '31':
+                  return 'Negative'
+               elif obj[7] == '21':
+                  return 'Positive'
+               elif obj[7] == '22':
+                  return 'Negative'
+               else:
+                  return 'Negative'
+            else:
+               return 'Positive'
+         elif obj[11] == '1':
+            # {"feature": "v119", "instances": 20, "metric_value": 0.7219, "depth": 4}
+            if obj[4] == '0':
+               # {"feature": "v106", "instances": 18, "metric_value": 0.65, "depth": 5}
+               if obj[2] == '2':
+                  return 'Negative'
+               elif obj[2] == '0':
+                  return 'Negative'
+               elif obj[2] == '1':
+                  return 'Negative'
+               elif obj[2] == '3':
+                  return 'Negative'
+               else:
+                  return 'Negative'
+            elif obj[4] == '1':
+               # {"feature": "v190", "instances": 2, "metric_value": 1.0, "depth": 5}
+               if obj[3] == '2':
+                  return 'Positive'
+               elif obj[3] == '4':
+                  return 'Negative'
+               else:
+                  return 'Positive'
+            else:
+               return 'Negative'
+         else:
+            return 'Positive'
+      elif obj[5] == '2':
+         # {"feature": "v128", "instances": 23, "metric_value": 0.6666, "depth": 3}
+         if obj[7] == '31':
+            # {"feature": "v113", "instances": 19, "metric_value": 0.6292, "depth": 4}
+            if obj[9] == '43':
+               return 'Negative'
+            elif obj[9] == '31':
+               # {"feature": "v116", "instances": 6, "metric_value": 0.65, "depth": 5}
+               if obj[10] == '22':
+                  return 'Negative'
+               elif obj[10] == '12':
+                  return 'Negative'
+               else:
+                  return 'Negative'
+            elif obj[9] == '21':
+               # {"feature": "b4", "instances": 2, "metric_value": 1.0, "depth": 5}
+               if obj[1] == '1':
+                  return 'Negative'
+               else:
+                  return 'Negative'
+            elif obj[9] == '32':
+               # {"feature": "b4", "instances": 2, "metric_value": 1.0, "depth": 5}
+               if obj[1] == '1':
+                  return 'Negative'
+               elif obj[1] == '2':
+                  return 'Positive'
+               else:
+                  return 'Negative'
+            else:
+               return 'Negative'
+         elif obj[7] == '21':
+            return 'Negative'
+         elif obj[7] == '13':
+            return 'Positive'
+         elif obj[7] == '22':
+            return 'Negative'
+         else:
+            return 'Negative'
+      elif obj[5] == '1':
+         return 'Negative'
+      else:
+         return 'Positive'
+   elif obj[0]<=6:
+      return 'Negative'
+   else:
+      return 'Positive'
+
+============================================================
+Running predictions on clinical test set...
+
+--------------------------------------------------------------------------------
+STEP 6: RIPPER SEPARATE-AND-CONQUER RULES INDUCTION (WITTGENSTEIN)
+ - Optimizing FOIL Information Gain for Positive Class (1)
+--------------------------------------------------------------------------------
+RIPPER model trained successfully!
+
+=== GENERATED RIPPER SEPARATE-AND-CONQUER RULESET ===
+[[v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0] V [v128=21^v129=31^b19=14.0-17.0]]
+============================================================
+Running predictions on clinical test set...
+
+================================================================================
+PRELIMINARY PERFORMANCE METRICS COMPARATIVE MATRIX
+================================================================================
+
+[MODEL 1] ChefBoost C4.5 Decision Tree:
+Confusion Matrix:
+[[25 15]
+ [ 6  3]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    Negative       0.81      0.62      0.70        40
+    Positive       0.17      0.33      0.22         9
+
+    accuracy                           0.57        49
+   macro avg       0.49      0.48      0.46        49
+weighted avg       0.69      0.57      0.62        49
+
+
+------------------------------------------------------------
+[MODEL 2] Wittgenstein RIPPER Ruleset:
+Confusion Matrix:
+[[37  3]
+ [ 9  0]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    Negative       0.80      0.93      0.86        40
+    Positive       0.00      0.00      0.00         9
+
+    accuracy                           0.76        49
+   macro avg       0.40      0.46      0.43        49
+weighted avg       0.66      0.76      0.70        49
+
+================================================================================
+Pipeline steps 5 and 6 executions completed successfully.
+================================================================================
+
+[6] Generating graphical representation of the C4.5 Decision Tree...
+ - Graphical tree plot successfully exported and persisted to: outputs\plots\decision_tree_plot.png and outputs/decision_tree_plot.png

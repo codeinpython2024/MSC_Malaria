@@ -1,0 +1,20 @@
+================================================================================
+EXECUTION LOG: Stage 0: Data Ingestion & Geopolitical Filtering
+Script: pre_process.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 1.26 seconds
+Exit Code: 0
+================================================================================
+
+Loading files: NGKR81DT\NGKR81FL.DTA and NGPR81DT\NGPR81FL.DTA...
+Executing demographic and residency subsetting...
+Applying geopolitical spatial constraints...
+Total target cohort isolated: 245 rural Nasarawa children.
+Mapping relational bridging keys and executing Left Join...
+Cleaning target class and algorithmic predictors...
+Extracting final SDOH theoretical feature space...
+==============================================================================
+PIPELINE COMPLETE. Final ML Matrix shape: (243, 17)
+Successfully saved final ML matrix to pre_processed_malaria_sdoh_matrix.csv
+Ready for categorical discretization and rule-based induction.
+==============================================================================

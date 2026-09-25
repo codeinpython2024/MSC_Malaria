@@ -1,4 +1,21 @@
-﻿Loading files: NGKR81DT\NGKR81FL.DTA and NGPR81DT\NGPR81FL.DTA...
+================================================================================
+EXECUTION LOG: Stage 2: Survey Weight Normalization & Baseline Diagnostics
+Script: second_step.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 2.68 seconds
+Exit Code: 0
+================================================================================
+
+C:\MSC_Malaria\second_step.py:221: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator. Otherwise, ticks may be mislabeled.
+  ax.set_xticklabels(categories, fontsize=9)
+C:\MSC_Malaria\second_step.py:219: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator. Otherwise, ticks may be mislabeled.
+  ax.set_xticklabels(categories, rotation=20, ha='right', fontsize=9)
+C:\MSC_Malaria\second_step.py:221: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator. Otherwise, ticks may be mislabeled.
+  ax.set_xticklabels(categories, fontsize=9)
+C:\MSC_Malaria\second_step.py:219: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator. Otherwise, ticks may be mislabeled.
+  ax.set_xticklabels(categories, rotation=20, ha='right', fontsize=9)
+findfont: Failed to find font weight semibold, now using 700.
+Loading files: NGKR81DT\NGKR81FL.DTA and NGPR81DT\NGPR81FL.DTA...
 Executing demographic and residency subsetting...
 Applying geopolitical spatial constraints...
 Total target cohort isolated: 245 rural Nasarawa children.

@@ -1,0 +1,36 @@
+================================================================================
+EXECUTION LOG: Stage 3 & 4: Stratified Train-Test Partition & SMOTE-NC Resampling
+Script: third_step.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 2.09 seconds
+Exit Code: 0
+================================================================================
+
+Executing Step 3: Establish the Validation Partition via Stratified Splitting...
+Successfully loaded dataset: final_malaria_sdoh_matrix.csv (243 records)
+ - Train set size: 194 records
+ - Test set size: 49 records
+
+Executing Step 4: Execute Data-Level Resampling via SMOTE-NC...
+ - Tracked Categorical Column Indices for SMOTE-NC: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+================================================================================
+COMPREHENSIVE SPLIT & RESAMPLING DIAGNOSTIC MATRIX
+================================================================================
+                     Dataset Partition  Total N  Negative N (0) Negative %  Positive N (1) Positive % Imbalance Ratio
+                 Original Full Dataset      243             198     81.48%              45     18.52%          4.40:1
+          Isolated Test Split (Step 3)       49              40     81.63%               9     18.37%          4.44:1
+         Original Train Split (Step 3)      194             158     81.44%              36     18.56%          4.39:1
+Balanced Train Split (Step 4 SMOTE-NC)      316             158     50.00%             158     50.00%          1.00:1
+================================================================================
+Verification Success: 100% of nominal categories in SMOTE-NC resampled training
+set remain structurally valid integers (no fractional decimals generated).
+================================================================================
+
+Saved files successfully:
+ - X_train_resampled.csv
+ - Y_train_resampled.csv
+ - X_test.csv
+ - Y_test.csv
+
+Step 3 and Step 4 Pipeline Stage Complete.

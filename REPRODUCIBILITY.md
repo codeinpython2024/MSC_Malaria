@@ -27,6 +27,7 @@ This document serves as the formal academic reproducibility audit trail, explici
 | **Sensitivity & Uncertainty Data** | Exported empirical CSV deliverables | [`outputs/multiseed_stability_results.csv`](file:///c:/MSC_Malaria/outputs/multiseed_stability_results.csv), [`outputs/grouped_cluster_sensitivity_results.csv`](file:///c:/MSC_Malaria/outputs/grouped_cluster_sensitivity_results.csv), [`outputs/ripper_rule_coverage_support.csv`](file:///c:/MSC_Malaria/outputs/ripper_rule_coverage_support.csv), [`outputs/c45_pathway_coverage_support.csv`](file:///c:/MSC_Malaria/outputs/c45_pathway_coverage_support.csv) |
 | **Model & Graphic Deliverables** | Serialized ML models (`.pkl`, `.npz`) & 300 DPI plots | [`outputs/models/`](file:///c:/MSC_Malaria/outputs/models/) and [`outputs/plots/`](file:///c:/MSC_Malaria/outputs/plots/) |
 | **Thesis Synchronization Engine** | Programmatic docx patching and figure synchronization | [`build_full_work_revised.py`](file:///c:/MSC_Malaria/build_full_work_revised.py) |
+| **Examiner Technical & Rationale Guide** | Dedicated script-by-script and artifact explanation guide | [`EXAMINER_TECHNICAL_GUIDE.md`](file:///c:/MSC_Malaria/EXAMINER_TECHNICAL_GUIDE.md) |
 
 ---
 
@@ -111,6 +112,7 @@ c:\MSC_Malaria\
 ├── pyproject.toml                        # Project configuration & dependency declarations
 ├── uv.lock                               # Exact cryptographic lockfile
 ├── REPRODUCIBILITY.md                    # This master audit and reproduction document
+├── EXAMINER_TECHNICAL_GUIDE.md          # Comprehensive script-by-script & artifact guide for examiners
 ├── Full_Work.docx                        # Primary synchronized dissertation document
 ├── Full_Work_Revised.docx                # Synchronized revised dissertation document
 ├── assessment_full_text.txt              # Examiner review text and 14 evaluation requirements

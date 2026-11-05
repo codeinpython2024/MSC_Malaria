@@ -287,3 +287,6 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+# Raw DHS microdata: obtain from The DHS Program (redistribution not permitted)
+NGKR81DT/
+NGPR81DT/

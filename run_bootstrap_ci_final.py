@@ -1,201 +1,153 @@
-import sys
-import io
-import numpy as np
+"""
+Stage 11: uncertainty for Table 4.8.
 
-# Ensure UTF-8 stdout encoding
+Reads the real test-set predictions and scores written by sixth_step.py
+(outputs/models/test_predictions.npz) and reports, for every model:
+  * point estimates,
+  * Wilson score 95% intervals for the proportions (accuracy, sensitivity,
+    specificity, positive and negative predictive value), and
+  * non-parametric bootstrap 95% percentile intervals (B = 1000, seed 42) for
+    every metric, including F1, macro F1, ROC-AUC and PR-AUC.
+
+PR-AUC is average precision (sklearn.metrics.average_precision_score).
+Nothing in this script is typed in by hand.
+"""
+import io
+import os
+import sys
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import average_precision_score, confusion_matrix, roc_auc_score
+
 if sys.stdout.encoding != 'utf-8':
     try:
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     except Exception:
         pass
-from sklearn.metrics import (
-    confusion_matrix,
-    roc_auc_score,
-    precision_recall_curve,
-    auc
-)
 
-# Load saved predictions
-data = np.load("outputs/models/test_predictions.npz")
-Y_test = data["Y_test"]
+data = np.load(os.path.join("outputs", "models", "test_predictions.npz"))
+Y_test = data["Y_test"].astype(int)
 N = len(Y_test)
 
 models = {
-    "Majority Class (Zero-R Baseline)": {
-        "pred": data["pred_zero"],
-        "prob": data["prob_zero"],
-        "is_zero_r": True,
-        "profile": "Trivial majority assignment"
-    },
-    "Logistic Regression (Linear Baseline)": {
-        "pred": data["pred_lr"],
-        "prob": data["prob_lr"],
-        "is_zero_r": False,
-        "profile": "Symmetric error distribution"
-    },
-    "C4.5 Decision Tree (White-Box)": {
-        "pred": data["pred_c45"],
-        "prob": data["prob_c45"],
-        "is_zero_r": False,
-        "profile": "Minority recall prioritized; lower specificity"
-    },
-    "RIPPER Ruleset (White-Box)": {
-        "pred": data["pred_ripper"],
-        "prob": data["prob_ripper"],
-        "is_zero_r": False,
-        "profile": "Severe rule conservatism; 0% recall"
-    },
-    "Random Forest (Ensemble Benchmark)": {
-        "pred": data["pred_rf"],
-        "prob": data["prob_rf"],
-        "is_zero_r": False,
-        "profile": "Moderate minority detection"
-    },
-    "Support Vector Classifier": {
-        "pred": data["pred_svm"],
-        "prob": data["prob_svm"],
-        "is_zero_r": False,
-        "profile": "Optimal harmonic trade-off"
-    }
+    "Majority Class (Zero-R)": ("zero", True),
+    "Logistic Regression": ("lr", False),
+    "C4.5 Decision Tree": ("c45", False),
+    "RIPPER Ruleset": ("ripper", False),
+    "Random Forest": ("rf", False),
+    "SVM (RBF)": ("svm", False),
 }
 
-def calc_all_metrics(y_true, y_pred, y_prob, is_zero_r=False):
-    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
-    tn, fp, fn, tp = cm.ravel()
-    
+
+def wilson(k, n, z=1.959963984540054):
+    if n == 0:
+        return (np.nan, np.nan)
+    p = k / n
+    denom = 1 + z ** 2 / n
+    centre = (p + z ** 2 / (2 * n)) / denom
+    half = z * np.sqrt(p * (1 - p) / n + z ** 2 / (4 * n ** 2)) / denom
+    return (max(0.0, centre - half) * 100, min(1.0, centre + half) * 100)
+
+
+def calc_all_metrics(y_true, y_pred, y_prob, constant_score):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     acc = (tp + tn) / (tp + tn + fp + fn) * 100.0
     sens = tp / (tp + fn) * 100.0 if (tp + fn) > 0 else 0.0
     spec = tn / (tn + fp) * 100.0 if (tn + fp) > 0 else 0.0
-    
     prec_pos = tp / (tp + fp) * 100.0 if (tp + fp) > 0 else 0.0
-    f1_pos = 2 * prec_pos * sens / (prec_pos + sens) if (prec_pos + sens) > 0 else 0.0
-    
     prec_neg = tn / (tn + fn) * 100.0 if (tn + fn) > 0 else 0.0
+    f1_pos = 2 * prec_pos * sens / (prec_pos + sens) if (prec_pos + sens) > 0 else 0.0
     f1_neg = 2 * prec_neg * spec / (prec_neg + spec) if (prec_neg + spec) > 0 else 0.0
-    
-    macro_f1 = (f1_pos + f1_neg) / 2.0
-    
-    if is_zero_r:
-        roc_auc = 0.5000
-        pr_auc = np.mean(y_true)
+    if constant_score:
+        roc_auc, pr_auc = 0.5, float(np.mean(y_true))
     else:
-        if len(np.unique(y_true)) > 1:
-            try:
-                roc_auc = roc_auc_score(y_true, y_prob)
-            except Exception:
-                roc_auc = 0.5000
-            try:
-                p_c, r_c, _ = precision_recall_curve(y_true, y_prob)
-                pr_auc = auc(r_c, p_c)
-            except Exception:
-                pr_auc = np.mean(y_true)
-        else:
-            roc_auc = 0.5000
-            pr_auc = np.mean(y_true)
-            
-    return {
-        "acc": acc,
-        "sens": sens,
-        "prec_pos": prec_pos,
-        "f1_pos": f1_pos,
-        "roc_auc": roc_auc,
-        "pr_auc": pr_auc,
-        "spec": spec,
-        "prec_neg": prec_neg,
-        "f1_neg": f1_neg,
-        "macro_f1": macro_f1
-    }
+        roc_auc = roc_auc_score(y_true, y_prob)
+        pr_auc = average_precision_score(y_true, y_prob)
+    return {"acc": acc, "sens": sens, "spec": spec, "prec_pos": prec_pos, "prec_neg": prec_neg,
+            "f1_pos": f1_pos, "f1_neg": f1_neg, "macro_f1": (f1_pos + f1_neg) / 2.0,
+            "roc_auc": roc_auc, "pr_auc": pr_auc,
+            "tp": int(tp), "fp": int(fp), "fn": int(fn), "tn": int(tn)}
 
-# Bootstrap B = 1000
+
 B = 1000
-np.random.seed(42)
+rng = np.random.RandomState(42)
+# One shared set of bootstrap resamples so all models are compared on identical samples
+boot_idx = []
+while len(boot_idx) < B:
+    idx = rng.choice(N, size=N, replace=True)
+    if len(np.unique(Y_test[idx])) == 2:
+        boot_idx.append(idx)
 
-bootstrap_stats = {}
+rows = []
+for name, (key, constant) in models.items():
+    pred = data[f"pred_{key}"].astype(int)
+    prob = data[f"prob_{key}"].astype(float)
+    point = calc_all_metrics(Y_test, pred, prob, constant)
+    boots = {k: [] for k in ["acc", "sens", "spec", "prec_pos", "prec_neg", "f1_pos", "f1_neg",
+                             "macro_f1", "roc_auc", "pr_auc"]}
+    for idx in boot_idx:
+        m = calc_all_metrics(Y_test[idx], pred[idx], prob[idx], constant)
+        for k in boots:
+            boots[k].append(m[k])
+    row = {"Model": name, "TP": point["tp"], "FP": point["fp"], "FN": point["fn"], "TN": point["tn"]}
+    for k in boots:
+        row[k] = point[k]
+        row[f"{k}_boot_lo"] = float(np.percentile(boots[k], 2.5))
+        row[f"{k}_boot_hi"] = float(np.percentile(boots[k], 97.5))
+    tp, fp, fn, tn = point["tp"], point["fp"], point["fn"], point["tn"]
+    row["acc_wilson_lo"], row["acc_wilson_hi"] = wilson(tp + tn, N)
+    row["sens_wilson_lo"], row["sens_wilson_hi"] = wilson(tp, tp + fn)
+    row["spec_wilson_lo"], row["spec_wilson_hi"] = wilson(tn, tn + fp)
+    row["prec_pos_wilson_lo"], row["prec_pos_wilson_hi"] = wilson(tp, tp + fp)
+    row["prec_neg_wilson_lo"], row["prec_neg_wilson_hi"] = wilson(tn, tn + fn)
+    rows.append(row)
 
-for name, m in models.items():
-    pred = m["pred"]
-    prob = m["prob"]
-    is_zr = m["is_zero_r"]
-    
-    # Point estimate
-    point = calc_all_metrics(Y_test, pred, prob, is_zero_r=is_zr)
-    
-    boot_lists = {k: [] for k in point.keys()}
-    b_count = 0
-    while b_count < B:
-        idx = np.random.choice(N, size=N, replace=True)
-        y_b = Y_test[idx]
-        if len(np.unique(y_b)) < 2:
-            continue
-        pred_b = pred[idx]
-        prob_b = prob[idx]
-        
-        m_b = calc_all_metrics(y_b, pred_b, prob_b, is_zero_r=is_zr)
-        for k in boot_lists:
-            boot_lists[k].append(m_b[k])
-        b_count += 1
-        
-    ci_dict = {}
-    for k in point.keys():
-        arr = np.array(boot_lists[k])
-        lo = np.percentile(arr, 2.5)
-        hi = np.percentile(arr, 97.5)
-        ci_dict[k] = (point[k], lo, hi)
-    
-    bootstrap_stats[name] = ci_dict
+df = pd.DataFrame(rows)
+os.makedirs("outputs", exist_ok=True)
+df.to_csv(os.path.join("outputs", "table_4_8_bootstrap_ci.csv"), index=False)
 
-print("Bootstrap evaluation completed successfully!\n")
+print(f"Bootstrap evaluation completed: B = {B} resamples (seed 42), N = {N}, "
+      f"{int(Y_test.sum())} positive; resamples lacking either class were redrawn.\n")
 
-# Print Panel A
-print("="*120)
-print("Table 4.8 Comparative Algorithmic Performance Evaluation Matrix (Clinical Test Partition, N=49)")
-print("Panel A: Primary Target (Minority Positive Class) Performance & Global Discrimination")
-print(f"{'Model Architecture':<38} | {'Global Accuracy (%) [95% CI]':<30} | {'Sensitivity (%) [95% CI]':<26} | {'Precision (Pos) (%) [95% CI]':<30} | {'F1-Score (Pos) (%) [95% CI]':<28} | {'ROC-AUC [95% CI]':<22} | {'PR-AUC [95% CI]':<22}")
-print("-" * 200)
 
-for name, st in bootstrap_stats.items():
-    acc_pt, acc_lo, acc_hi = st['acc']
-    sens_pt, sens_lo, sens_hi = st['sens']
-    prec_p_pt, prec_p_lo, prec_p_hi = st['prec_pos']
-    f1_p_pt, f1_p_lo, f1_p_hi = st['f1_pos']
-    roc_pt, roc_lo, roc_hi = st['roc_auc']
-    pr_pt, pr_lo, pr_hi = st['pr_auc']
-    
-    # Format Wilson for accuracy, sensitivity as in original table
-    # Original table reported:
-    # Zero-R: 81.63% [68.6, 90.0], Sens: 0.00% [0.0, 30.8]
-    # Logistic: 71.43% [57.6, 82.2], Sens: 22.22% [6.3, 54.7]
-    # C4.5: 57.14% [43.3, 69.9], Sens: 33.33% [12.1, 64.6]
-    # RIPPER: 75.51% [61.9, 85.4], Sens: 0.00% [0.0, 30.8]
-    # RF: 73.47% [59.7, 83.8], Sens: 22.22% [6.3, 54.7]
-    # SVM: 75.51% [61.9, 85.4], Sens: 33.33% [12.1, 64.6]
-    
-    # Bootstrap CI for Precision (Pos), F1 (Pos), PR-AUC:
-    prec_str = f"{prec_p_pt:.2f}% [{prec_p_lo:.1f}, {prec_p_hi:.1f}]"
-    f1_p_str = f"{f1_p_pt:.2f}% [{f1_p_lo:.1f}, {f1_p_hi:.1f}]"
-    if name == "Majority Class (Zero-R Baseline)":
-        roc_str = "0.5000 [—]"
-        pr_str = f"{pr_pt:.4f} [{pr_lo:.4f}, {pr_hi:.4f}]"
-    else:
-        roc_str = f"{roc_pt:.4f} [{roc_lo:.2f}, {roc_hi:.2f}]"
-        pr_str = f"{pr_pt:.4f} [{pr_lo:.4f}, {pr_hi:.4f}]"
-        
-    print(f"{name:<38} | {acc_pt:.2f}% (boot [{acc_lo:.1f}, {acc_hi:.1f}]) | {sens_pt:.2f}% (boot [{sens_lo:.1f}, {sens_hi:.1f}]) | {prec_str:<30} | {f1_p_str:<28} | {roc_str:<22} | {pr_str:<22}")
+def pct(r, k, ci):
+    lo, hi = r[f"{k}_{ci}_lo"], r[f"{k}_{ci}_hi"]
+    if np.isnan(lo) or np.isnan(hi):
+        # e.g. Zero-R precision: 0 positive predictions, so the proportion is undefined
+        return f"{r[k]:.2f}% [— undefined, 0 predicted positive]"
+    return f"{r[k]:.2f}% [{lo:.1f}, {hi:.1f}]"
 
-print("\n" + "="*120)
-print("Panel B: Non-Target (Majority Negative Class) Performance & Macro-Averaged Balance")
-print(f"{'Model Architecture':<38} | {'Specificity (%) [95% CI]':<26} | {'Precision (Neg) (%) [95% CI]':<30} | {'F1-Score (Neg) (%) [95% CI]':<28} | {'Macro Avg F1 (%) [95% CI]':<26} | {'Class Balance Diagnostic Profile'}")
-print("-" * 190)
 
-for name, st in bootstrap_stats.items():
-    spec_pt, spec_lo, spec_hi = st['spec']
-    prec_n_pt, prec_n_lo, prec_n_hi = st['prec_neg']
-    f1_n_pt, f1_n_lo, f1_n_hi = st['f1_neg']
-    mf1_pt, mf1_lo, mf1_hi = st['macro_f1']
-    prof = models[name]["profile"]
-    
-    prec_n_str = f"{prec_n_pt:.2f}% [{prec_n_lo:.1f}, {prec_n_hi:.1f}]"
-    f1_n_str = f"{f1_n_pt:.2f}% [{f1_n_lo:.1f}, {f1_n_hi:.1f}]"
-    mf1_str = f"{mf1_pt:.2f}% [{mf1_lo:.1f}, {mf1_hi:.1f}]"
-    
-    print(f"{name:<38} | {spec_pt:.2f}% (boot [{spec_lo:.1f}, {spec_hi:.1f}]) | {prec_n_str:<30} | {f1_n_str:<28} | {mf1_str:<26} | {prof}")
+def num(r, k):
+    return f"{r[k]:.4f} [{r[k + '_boot_lo']:.2f}, {r[k + '_boot_hi']:.2f}]"
+
+
+print("=" * 150)
+print("Table 4.8 Panel A: positive class and discrimination (test partition, N = 49)")
+print("Accuracy, sensitivity, precision: Wilson 95% CI. F1, ROC-AUC, PR-AUC: bootstrap 95% CI.")
+print("-" * 150)
+print(f"{'Model':<26} | {'Accuracy':<22} | {'Sensitivity':<22} | {'Precision (pos)':<22} | "
+      f"{'F1 (pos)':<22} | {'ROC-AUC':<20} | {'PR-AUC (AP)':<20}")
+for _, r in df.iterrows():
+    roc = "0.5000 [—]" if r["Model"].startswith("Majority") else num(r, "roc_auc")
+    print(f"{r['Model']:<26} | {pct(r, 'acc', 'wilson'):<22} | {pct(r, 'sens', 'wilson'):<22} | "
+          f"{pct(r, 'prec_pos', 'wilson'):<22} | {pct(r, 'f1_pos', 'boot'):<22} | {roc:<20} | "
+          f"{num(r, 'pr_auc'):<20}")
+
+print("\n" + "=" * 150)
+print("Table 4.8 Panel B: negative class and macro balance")
+print("Specificity, NPV: Wilson 95% CI. F1 (neg), macro F1: bootstrap 95% CI.")
+print("-" * 150)
+print(f"{'Model':<26} | {'Specificity':<22} | {'NPV':<22} | {'F1 (neg)':<22} | {'Macro F1':<22}")
+for _, r in df.iterrows():
+    print(f"{r['Model']:<26} | {pct(r, 'spec', 'wilson'):<22} | {pct(r, 'prec_neg', 'wilson'):<22} | "
+          f"{pct(r, 'f1_neg', 'boot'):<22} | {pct(r, 'macro_f1', 'boot'):<22}")
+
+# C4.5 hard-label discrimination, for the table note
+if "prob_c45_hard" in data.files:
+    hard = data["prob_c45_hard"].astype(float)
+    print(f"\nC4.5 hard-label (single operating point): ROC-AUC = {roc_auc_score(Y_test, hard):.4f}, "
+          f"AP = {average_precision_score(Y_test, hard):.4f}")
+print(f"No-skill PR-AUC baseline (test prevalence) = {Y_test.mean():.4f}")
+print("\nFull table written to outputs/table_4_8_bootstrap_ci.csv")

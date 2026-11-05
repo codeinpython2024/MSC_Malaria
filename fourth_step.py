@@ -175,159 +175,47 @@ print("Pipeline steps 5 and 6 executions completed successfully.")
 print("="*80)
 
 # ------------------------------------------------------------------------------
-# 6. GENERATE AND SAVE DECISION TREE GRAPHICAL OUTPUT
+# 6. GENERATE FIGURE 4.5 DIRECTLY FROM outputs/rules/rules.py
 # ------------------------------------------------------------------------------
-print("\n[6] Generating graphical representation of the C4.5 Decision Tree...")
+# The diagram is drawn from the parsed rules file; node counts are computed from
+# the training data. Nothing about the tree structure or its counts is typed in.
+print("\n[6] Generating Figure 4.5 from outputs/rules/rules.py ...")
 try:
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as patches
-    
-    # Ensure plots directory exists
+    from c45_tree_utils import C45Tree, plot_tree
+
+    tree = C45Tree.from_file(os.path.join("outputs", "rules", "rules.py"))
+    X_train_raw = pd.read_csv("X_train_resampled.csv")
+    Y_train_raw = pd.read_csv("Y_train_resampled.csv")['hml32'].astype(int).values
+    n_original = len(pd.read_csv("Y_train_original.csv"))
+    pathway_map = tree.resolve_pathways()
+
     os.makedirs(os.path.join("outputs", "plots"), exist_ok=True)
-    
-    # Set up matplotlib figure with optimal academic proportions
-    fig, ax = plt.subplots(figsize=(26, 13), dpi=300)
-    ax.axis('off')
-    
-    # Set margins to prevent any nodes or labels from being cut off at the edges
-    ax.set_xlim(-0.02, 1.02)
-    ax.set_ylim(-0.02, 1.02)
-    
-    # Define color scheme (light theme with soft, professional colors)
-    color_split = '#e3f2fd'     # Soft blue for decision/split nodes
-    color_neg = '#d4edda'       # Soft green for Negative (no malaria) leaves
-    color_pos = '#f8d7da'       # Soft red for Positive (malaria) leaves
-    border_split = '#1565c0'
-    border_neg = '#2e7d32'
-    border_pos = '#c62828'
-    
-    # Node drawing utility
-    def draw_node(x, y, text, box_type="split", width=0.11, height=0.08, fontsize=8.5):
-        if box_type == "split":
-            fc, ec = color_split, border_split
-        elif box_type == "neg":
-            fc, ec = color_neg, border_neg
-        else:
-            fc, ec = color_pos, border_pos
-            
-        box = patches.FancyBboxPatch(
-            (x - width/2, y - height/2), width, height,
-            boxstyle="round,pad=0.012",
-            facecolor=fc, edgecolor=ec, linewidth=2.2, zorder=4
-        )
-        ax.add_patch(box)
-        ax.text(
-            x, y, text,
-            ha='center', va='center', fontsize=fontsize, fontweight='bold',
-            color='#111111', zorder=5
-        )
-        
-    # Connection line drawing utility
-    def draw_edge(x1, y1, x2, y2, label="", label_pos=0.5, h1=0.04, h2=0.04):
-        ax.annotate(
-            "", xy=(x2, y2 + h2), xytext=(x1, y1 - h1),
-            arrowprops=dict(arrowstyle="-|>", color='#444444', lw=1.8, mutation_scale=12),
-            zorder=2
-        )
-        if label:
-            lx = x1 + (x2 - x1) * label_pos
-            ly = y1 + (y2 - y1) * label_pos
-            ax.text(
-                lx, ly, label,
-                ha='center', va='center', fontsize=8, fontweight='bold', fontstyle='italic',
-                bbox=dict(boxstyle="round,pad=0.12", fc='white', ec='#cccccc', alpha=0.95),
-                zorder=3
-            )
-            
-    # Draw C4.5 Decision Tree Structure (conforming exactly to Table 4.10 and Pathways C1-C5)
-    
-    # Level 0: Root
-    draw_node(0.50, 0.94, "Root Node:\nChild's Age (b19)", "split", 0.14, 0.075, 9.5)
-    
-    # Level 1
-    draw_node(0.12, 0.78, "Leaf: Negative\n[Pathway C1: Infancy]\nAge <= 6 mo.\n(n=5, 100% Neg)", "neg", 0.13, 0.085, 8.0)
-    draw_edge(0.50, 0.94, 0.12, 0.78, "Age <= 6 mo.")
-    
-    draw_node(0.64, 0.78, "Split Node:\nRadio Exposure (v158)", "split", 0.15, 0.075, 9.0)
-    draw_edge(0.50, 0.94, 0.64, 0.78, "Age > 6 mo.")
-    
-    # Level 2
-    draw_node(0.90, 0.60, "Leaf: Negative\n[Media Access]\nRadio Weekly/Daily\n(n=36, 94.4% Neg)", "neg", 0.13, 0.085, 8.0)
-    draw_edge(0.64, 0.78, 0.90, 0.60, "v158 in {1, 2}")
-    
-    draw_node(0.48, 0.60, "Split Node:\nBed Net Usage (hml20)\n[Radio Isolated, v158=0]", "split", 0.16, 0.075, 8.5)
-    draw_edge(0.64, 0.78, 0.48, 0.60, "Never Radio (0)")
-    
-    # Level 3
-    draw_node(0.28, 0.42, "Split Node:\nWater Source (v113)\n[No Bed Net, hml20=0]", "split", 0.15, 0.075, 8.5)
-    draw_edge(0.48, 0.60, 0.28, 0.42, "No Net (0)")
-    
-    draw_node(0.76, 0.42, "Split Node:\nElectricity Access (v119)\n[Bed Net User, hml20=1]", "split", 0.16, 0.075, 8.5)
-    draw_edge(0.48, 0.60, 0.76, 0.42, "Slept Under Net (1)")
-    
-    # Level 4 (Under Water Source)
-    draw_node(0.10, 0.24, "Split Node:\nRoof Type (v129)\n[Well, v113=31]", "split", 0.11, 0.075, 8.0)
-    draw_edge(0.28, 0.42, 0.10, 0.24, "Prot. Well (31)")
-    
-    draw_node(0.26, 0.24, "Split Node:\nMaternal Ed. (v106)\n[Rainwater, v113=43]", "split", 0.12, 0.075, 8.0)
-    draw_edge(0.28, 0.42, 0.26, 0.24, "Rainwater (43)")
-    
-    draw_node(0.42, 0.24, "Split Node:\nWall Material (v128)\n[Borehole, v113 in {21,32}]", "split", 0.13, 0.075, 8.0)
-    draw_edge(0.28, 0.42, 0.42, 0.24, "Borehole/Well")
-    
-    # Level 4 (Under Electricity)
-    draw_node(0.66, 0.24, "Leaf: Negative\n[Standard Net Protection]\nNo Electricity (v119=0)\n(n=18, 100% Neg)", "neg", 0.13, 0.085, 8.0)
-    draw_edge(0.76, 0.42, 0.66, 0.24, "No Power (0)")
-    
-    draw_node(0.86, 0.24, "Split Node:\nWealth Quintile (v190)\n[Has Power, v119=1]", "split", 0.13, 0.075, 8.0)
-    draw_edge(0.76, 0.42, 0.86, 0.24, "Has Power (1)")
-    
-    # Level 5 (Terminal Leaves)
-    # Pathway C2
-    draw_node(0.06, 0.06, "Leaf: Positive\n[Pathway C2]\nMetal Roof (v129=31)\n(n=124, 80.6% Pos)", "pos", 0.10, 0.085, 7.5)
-    draw_edge(0.10, 0.24, 0.06, 0.06, "Metal (31)")
-    
-    draw_node(0.15, 0.06, "Leaf: Negative\nOther Roofs\n(n=14, Neg)", "neg", 0.08, 0.085, 7.5)
-    draw_edge(0.10, 0.24, 0.15, 0.06, "Other")
-    
-    # Pathway C3
-    draw_node(0.23, 0.06, "Leaf: Positive\n[Pathway C3]\nNo Education (v106=0)\n(n=49, 53.1% Pos)", "pos", 0.10, 0.085, 7.5)
-    draw_edge(0.26, 0.24, 0.23, 0.06, "None (0)")
-    
-    draw_node(0.32, 0.06, "Leaf: Negative\nPrimary+ (v106>0)\n(n=7, Neg)", "neg", 0.08, 0.085, 7.5)
-    draw_edge(0.26, 0.24, 0.32, 0.06, "Educated")
-    
-    # Pathway C4
-    draw_node(0.40, 0.06, "Leaf: Positive\n[Pathway C4]\nMud Walls (v128=21)\n(n=28, 60.7% Pos)", "pos", 0.10, 0.085, 7.5)
-    draw_edge(0.42, 0.24, 0.40, 0.06, "Mud (21)")
-    
-    draw_node(0.49, 0.06, "Leaf: Negative\nImproved Walls\n(n=38, Neg)", "neg", 0.08, 0.085, 7.5)
-    draw_edge(0.42, 0.24, 0.49, 0.06, "Improved")
-    
-    # Pathway C5
-    draw_node(0.81, 0.06, "Leaf: Positive\n[Pathway C5: Paradox]\nPoorer Quintile (v190<=2)\n(n=1, 100% Pos)", "pos", 0.11, 0.085, 7.5)
-    draw_edge(0.86, 0.24, 0.81, 0.06, "Poorer (<=2)")
-    
-    draw_node(0.92, 0.06, "Leaf: Negative\nRicher Quintile\n(n=1, Neg)", "neg", 0.08, 0.085, 7.5)
-    draw_edge(0.86, 0.24, 0.92, 0.06, "Richer")
-    
-    plt.title("C4.5 Decision Tree Topology: Principal SDoH Epidemiological Pathways (Table 4.10 Alignment)", 
-              fontsize=16, fontweight='bold', pad=25, color='#112233')
-    
-    plt.figtext(
-        0.5, 0.01, 
-        "Note: Visual topology corresponds to the 5 principal operational pathways extracted by C4.5 (ChefBoost) reported in Table 4.10.\nVariables: b19 (Age), v158 (Radio), hml20 (Bednet Usage), v113 (Drinking Water), v129 (Roof), v106 (Maternal Education), v128 (Wall Material), v119 (Electricity), v190 (Wealth).",
-        ha='center', fontsize=9, style='italic', color='#444444'
+    # Figure 4.5: named-pathway view (off-path subtrees collapsed, counts exact)
+    omitted = plot_tree(
+        tree, X_train_raw, Y_train_raw,
+        out_paths=[os.path.join("outputs", "plots", "decision_tree_plot.png"),
+                   os.path.join("outputs", "decision_tree_plot.png")],
+        n_original=n_original, pathway_map=pathway_map, collapse_offpath=True,
+        title="C4.5 (ChefBoost) tree from rules.py: named pathways C1-C5",
     )
-    
-    tree_plot_path = os.path.join("outputs", "plots", "decision_tree_plot.png")
-    plt.tight_layout()
-    plt.savefig(tree_plot_path, dpi=300)
-    plt.savefig(os.path.join("outputs", "decision_tree_plot.png"), dpi=300)
-    plt.close()
-    print(f" - Graphical tree plot successfully exported and persisted to: {tree_plot_path} and outputs/decision_tree_plot.png")
-    
+    # Appendix figure: the complete tree, nothing collapsed
+    plot_tree(
+        tree, X_train_raw, Y_train_raw,
+        out_paths=[os.path.join("outputs", "plots", "decision_tree_full.png")],
+        n_original=n_original, pathway_map=pathway_map, collapse_offpath=False,
+        title="C4.5 (ChefBoost) tree from rules.py: complete tree", font=5.0, row_h=0.29,
+    )
+    print(f" - Leaves in rules.py: {len(tree.leaves)} "
+          f"({len(tree.leaves) - len(omitted)} reached by training records, "
+          f"{len(omitted)} unseen-value fallback leaves not drawn)")
+    print(" - Named pathways resolved to leaves:")
+    for name, ids in pathway_map.items():
+        for i in ids:
+            print(f"     {name} -> Leaf {i} ({tree.leaves[i].label}): {tree.describe_path(tree.leaves[i])}")
+    print(" - Figure 4.5 (pathways view) written to outputs/plots/decision_tree_plot.png")
+    print(" - Complete tree written to outputs/plots/decision_tree_full.png")
 except Exception as e:
-    print(f"Error plotting decision tree structure: {e}")
+    print(f"Error generating Figure 4.5 from rules.py: {e}")
     import traceback
     traceback.print_exc()
+    sys.exit(1)

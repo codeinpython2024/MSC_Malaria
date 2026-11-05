@@ -2,7 +2,7 @@
 EXECUTION LOG: Stage 2: Survey Weight Normalization & Baseline Diagnostics
 Script: second_step.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 2.68 seconds
+Execution Duration: 4.55 seconds
 Exit Code: 0
 ================================================================================
 

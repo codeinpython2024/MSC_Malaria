@@ -2,7 +2,7 @@
 EXECUTION LOG: Stage 3 & 4: Stratified Train-Test Partition & SMOTE-NC Resampling
 Script: third_step.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 2.09 seconds
+Execution Duration: 5.59 seconds
 Exit Code: 0
 ================================================================================
 
@@ -27,10 +27,14 @@ Verification Success: 100% of nominal categories in SMOTE-NC resampled training
 set remain structurally valid integers (no fractional decimals generated).
 ================================================================================
 
+ - Original rows occupy the first 194 rows of the resampled set: True
+ - Synthetic rows appended: 122 (all positive: True)
 Saved files successfully:
  - X_train_resampled.csv
  - Y_train_resampled.csv
  - X_test.csv
  - Y_test.csv
+ - X_train_original.csv
+ - Y_train_original.csv
 
 Step 3 and Step 4 Pipeline Stage Complete.

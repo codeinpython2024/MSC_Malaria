@@ -11,11 +11,11 @@ stages = [
     ("outputs/logs/step2_baseline_diagnostics.log", "second_step.py", "Stage 2: Survey Weight Normalization & Baseline Diagnostics"),
     ("outputs/logs/step3_partition.log", "third_step.py", "Stage 3 & 4: Stratified Train-Test Partition & SMOTE-NC Resampling"),
     ("outputs/logs/step4_rule_induction.log", "fourth_step.py", "Stage 5: White-Box Rule Induction (C4.5 & RIPPER)"),
-    ("outputs/logs/step5_black_box_baselines.log", "fifth_step.py", "Stage 6: Black-Box Benchmark Optimization (RF & SVM)"),
-    ("outputs/logs/step6_comparative_evaluation.log", "sixth_step.py", "Stage 7: Comparative Evaluation, Calibrated ROC & Trade-off Matrix"),
-    ("outputs/logs/step7_multiseed_stability.log", "step7_multiseed_stability.py", "Stage 8: Multi-Seed Stability Analysis (10 Seeds)"),
-    ("outputs/logs/step8_grouped_cluster_sensitivity.log", "step8_grouped_cluster_sensitivity.py", "Stage 9: Grouped Household & Cluster Sensitivity (5-Fold CV)"),
-    ("outputs/logs/step9_rule_coverage_support.log", "step9_rule_coverage_support.py", "Stage 10: Rule Support, Coverage & Calibrated ROC Thresholds"),
+    ("outputs/logs/step5_black_box_baselines.log", "fifth_step.py", "Stage 6: Black-Box Benchmark Tuning (RF & SVM, SMOTE-NC inside CV folds)"),
+    ("outputs/logs/step6_comparative_evaluation.log", "sixth_step.py", "Stage 7: Comparative Evaluation, ROC (C4.5 leaf scores) & Trade-off Matrix"),
+    ("outputs/logs/step7_multiseed_stability.log", "step7_multiseed_stability.py", "Stage 8: Multi-Seed Stability Analysis (10 Seeds, all six models)"),
+    ("outputs/logs/step8_grouped_cluster_sensitivity.log", "step8_grouped_cluster_sensitivity.py", "Stage 9: Grouped Household & Cluster Sensitivity (5-Fold CV, incl. C4.5 & RIPPER)"),
+    ("outputs/logs/step9_rule_coverage_support.log", "step9_rule_coverage_support.py", "Stage 10: Rule Support & Coverage Audit (C4.5 leaves, RIPPER rules)"),
     ("outputs/logs/step10_bootstrap_ci.log", "run_bootstrap_ci_final.py", "Stage 11: Non-Parametric Bootstrap Evaluation (B=1000)"),
 ]
 

@@ -1,6 +1,7 @@
 import os
 import sys
 import io
+import json
 import numpy as np
 
 # Ensure UTF-8 stdout encoding for clean symbols (e.g. ±)
@@ -9,31 +10,26 @@ if sys.stdout.encoding != 'utf-8':
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     except Exception:
         pass
+sys.path.insert(0, os.getcwd())
+
 import pandas as pd
+import wittgenstein as lw
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTENC
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import (
-    confusion_matrix,
-    roc_auc_score,
-    precision_recall_curve,
-    auc,
-    precision_score,
-    recall_score,
-    f1_score
-)
+from sklearn.metrics import confusion_matrix, roc_auc_score, average_precision_score
 
-print("="*90)
-print("STEP 7: REPEATED TRAIN/TEST EXPERIMENT ACROSS MULTIPLE RANDOM SEEDS (ITEM 6)")
-print("="*90)
+from c45_tree_utils import fit_chefboost_isolated
 
-# Load data
+print("=" * 90)
+print("STEP 7: REPEATED TRAIN/TEST EXPERIMENT ACROSS MULTIPLE RANDOM SEEDS")
+print("=" * 90)
+
 df = pd.read_csv("final_malaria_sdoh_matrix.csv")
 
 continuous_feature = ['b19']
@@ -42,182 +38,145 @@ feature_cols = continuous_feature + nominal_features
 
 X_raw = df[feature_cols].copy()
 y_raw = df['hml32'].astype(int).values
-
 cat_indices = list(range(1, len(feature_cols)))
 
-# Define preprocessing pipeline for scikit-learn estimators
+with open(os.path.join("outputs", "models", "best_params.json"), encoding="utf-8") as f:
+    best_params = json.load(f)
+RF_PARAMS = best_params["random_forest"]
+SVM_PARAMS = best_params["svm"]
+print(f"Random Forest parameters (from fifth_step.py tuning): {RF_PARAMS}")
+print(f"SVM parameters (from fifth_step.py tuning): {SVM_PARAMS}")
+
+
 def get_preprocessor():
-    return ColumnTransformer(
-        transformers=[
-            ('num', StandardScaler(), continuous_feature),
-            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), nominal_features)
-        ]
-    )
+    return ColumnTransformer(transformers=[
+        ('num', StandardScaler(), continuous_feature),
+        ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), nominal_features)
+    ])
 
-# 10 random seeds
+
+def to_sklearn(X):
+    X = X.copy()
+    X['b19'] = X['b19'].astype(float)
+    for col in nominal_features:
+        X[col] = X[col].astype(int).astype(str)
+    return X
+
+
+def to_ripper(X):
+    X = X.copy()
+    X['b19'] = X['b19'].astype(int)
+    for col in nominal_features:
+        X[col] = X[col].astype(int).astype(str).astype(object)
+    return X
+
+
 SEEDS = [10, 20, 30, 42, 50, 60, 70, 80, 90, 100]
+METRICS = ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "F1_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]
 
-def eval_metrics(y_true, y_pred, y_prob, is_zero_r=False):
-    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
-    tn, fp, fn, tp = cm.ravel()
-    
+
+def eval_metrics(y_true, y_pred, y_prob, constant_score=False):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     acc = (tp + tn) / (tp + tn + fp + fn) * 100.0
     sens = tp / (tp + fn) * 100.0 if (tp + fn) > 0 else 0.0
     spec = tn / (tn + fp) * 100.0 if (tn + fp) > 0 else 0.0
-    
     prec_pos = tp / (tp + fp) * 100.0 if (tp + fp) > 0 else 0.0
     f1_pos = 2 * prec_pos * sens / (prec_pos + sens) if (prec_pos + sens) > 0 else 0.0
-    
     prec_neg = tn / (tn + fn) * 100.0 if (tn + fn) > 0 else 0.0
     f1_neg = 2 * prec_neg * spec / (prec_neg + spec) if (prec_neg + spec) > 0 else 0.0
-    
-    macro_f1 = (f1_pos + f1_neg) / 2.0
-    
-    if is_zero_r:
-        roc_auc = 0.5000
-        pr_auc = np.mean(y_true)
+    if constant_score:
+        roc_auc, pr_auc = 0.5, float(np.mean(y_true))
     else:
-        if len(np.unique(y_true)) > 1:
-            try:
-                roc_auc = roc_auc_score(y_true, y_prob)
-            except Exception:
-                roc_auc = 0.5000
-            try:
-                p_c, r_c, _ = precision_recall_curve(y_true, y_prob)
-                pr_auc = auc(r_c, p_c)
-            except Exception:
-                pr_auc = np.mean(y_true)
-        else:
-            roc_auc = 0.5000
-            pr_auc = np.mean(y_true)
-            
-    return {
-        "Accuracy": acc,
-        "Sensitivity": sens,
-        "Specificity": spec,
-        "Precision_Pos": prec_pos,
-        "F1_Pos": f1_pos,
-        "Macro_F1": macro_f1,
-        "ROC_AUC": roc_auc,
-        "PR_AUC": pr_auc
-    }
+        roc_auc = roc_auc_score(y_true, y_prob)
+        pr_auc = average_precision_score(y_true, y_prob)
+    return {"Accuracy": acc, "Sensitivity": sens, "Specificity": spec, "Precision_Pos": prec_pos,
+            "F1_Pos": f1_pos, "Macro_F1": (f1_pos + f1_neg) / 2.0, "ROC_AUC": roc_auc, "PR_AUC": pr_auc}
 
-models_results = {
-    "Majority Class (Zero-R)": {k: [] for k in ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "F1_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]},
-    "Logistic Regression": {k: [] for k in ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "F1_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]},
-    "Decision Tree (C4.5 / Entropy)": {k: [] for k in ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "F1_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]},
-    "Random Forest (Ensemble)": {k: [] for k in ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "F1_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]},
-    "Support Vector Machine (RBF)": {k: [] for k in ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "F1_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]}
-}
 
-print(f"Executing 80/20 train/test split across {len(SEEDS)} distinct random seeds with isolated SMOTE-NC...\n")
+MODELS = ["Majority Class (Zero-R)", "Logistic Regression", "C4.5 (ChefBoost)", "RIPPER (Wittgenstein)",
+          "Random Forest", "Support Vector Machine"]
+models_results = {m: {k: [] for k in METRICS} for m in MODELS}
+per_seed_rows = []
+
+print(f"\nExecuting stratified 80/20 split across {len(SEEDS)} seeds; SMOTE-NC on each training split only.\n")
 
 for i, seed in enumerate(SEEDS, 1):
-    print(f"Seed [{i:02d}/10]: {seed} ...", flush=True)
-    
-    # 1. Stratified 80/20 train/test partition
+    print(f"Seed [{i:02d}/{len(SEEDS)}]: {seed} ...", flush=True)
     X_train_raw, X_test_raw, y_train_raw, y_test = train_test_split(
-        X_raw, y_raw, test_size=0.20, random_state=seed, stratify=y_raw
-    )
-    
-    # Cast nominals as str for preprocessing pipeline
-    X_train_clean = X_train_raw.copy()
-    X_test_clean = X_test_raw.copy()
-    X_train_clean['b19'] = X_train_clean['b19'].astype(float)
-    X_test_clean['b19'] = X_test_clean['b19'].astype(float)
+        X_raw, y_raw, test_size=0.20, random_state=seed, stratify=y_raw)
+
+    # Same SMOTE-NC input format as third_step.py: b19 int, nominal codes as str
+    X_train_fmt = X_train_raw.copy()
+    X_train_fmt['b19'] = X_train_fmt['b19'].astype(int)
     for col in nominal_features:
-        X_train_clean[col] = X_train_clean[col].astype(int).astype(str)
-        X_test_clean[col] = X_test_clean[col].astype(int).astype(str)
-        
-    # 2. Resample training fold ONLY via SMOTE-NC
-    # For SMOTE-NC, categorical features must be ints/objects
+        X_train_fmt[col] = X_train_fmt[col].astype(int).astype(str)
     smote = SMOTENC(categorical_features=cat_indices, random_state=seed, k_neighbors=5)
-    X_train_res, y_train_res = smote.fit_resample(X_train_clean, y_train_raw)
-    
-    # --- A. Zero-R Baseline ---
-    y_pred_zr = np.zeros_like(y_test)
-    y_prob_zr = np.full_like(y_test, fill_value=np.mean(y_train_res), dtype=float)
-    m_zr = eval_metrics(y_test, y_pred_zr, y_prob_zr, is_zero_r=True)
-    for k in m_zr: models_results["Majority Class (Zero-R)"][k].append(m_zr[k])
-    
-    # --- B. Logistic Regression ---
-    pipe_lr = Pipeline([
-        ('prep', get_preprocessor()),
-        ('clf', LogisticRegression(C=1.0, random_state=seed, max_iter=1000))
-    ])
-    pipe_lr.fit(X_train_res, y_train_res)
-    pred_lr = pipe_lr.predict(X_test_clean)
-    prob_lr = pipe_lr.predict_proba(X_test_clean)[:, 1]
-    m_lr = eval_metrics(y_test, pred_lr, prob_lr)
-    for k in m_lr: models_results["Logistic Regression"][k].append(m_lr[k])
-    
-    # --- C. Decision Tree (C4.5 Entropy) ---
-    pipe_dt = Pipeline([
-        ('prep', get_preprocessor()),
-        ('clf', DecisionTreeClassifier(criterion='entropy', random_state=seed, min_samples_leaf=3))
-    ])
-    pipe_dt.fit(X_train_res, y_train_res)
-    pred_dt = pipe_dt.predict(X_test_clean)
-    prob_dt = pipe_dt.predict_proba(X_test_clean)[:, 1]
-    m_dt = eval_metrics(y_test, pred_dt, prob_dt)
-    for k in m_dt: models_results["Decision Tree (C4.5 / Entropy)"][k].append(m_dt[k])
-    
-    # --- D. Random Forest ---
-    pipe_rf = Pipeline([
-        ('prep', get_preprocessor()),
-        ('clf', RandomForestClassifier(n_estimators=300, max_depth=10, min_samples_split=5, random_state=seed, n_jobs=1))
-    ])
-    pipe_rf.fit(X_train_res, y_train_res)
-    pred_rf = pipe_rf.predict(X_test_clean)
-    prob_rf = pipe_rf.predict_proba(X_test_clean)[:, 1]
-    m_rf = eval_metrics(y_test, pred_rf, prob_rf)
-    for k in m_rf: models_results["Random Forest (Ensemble)"][k].append(m_rf[k])
-    
-    # --- E. Support Vector Machine (RBF) ---
-    pipe_svm = Pipeline([
-        ('prep', get_preprocessor()),
-        ('clf', SVC(C=100, gamma=1, kernel='rbf', probability=True, random_state=seed))
-    ])
-    pipe_svm.fit(X_train_res, y_train_res)
-    pred_svm = pipe_svm.predict(X_test_clean)
-    prob_svm = pipe_svm.predict_proba(X_test_clean)[:, 1]
-    m_svm = eval_metrics(y_test, pred_svm, prob_svm)
-    for k in m_svm: models_results["Support Vector Machine (RBF)"][k].append(m_svm[k])
+    X_train_res, y_train_res = smote.fit_resample(X_train_fmt, y_train_raw)
+    y_train_res = np.asarray(y_train_res).astype(int)
 
-print("\nAll 10 random seeds completed successfully!\n")
+    X_tr_sk, X_te_sk = to_sklearn(X_train_res), to_sklearn(X_test_raw)
+    outputs = {}
 
-# Summary Table Construction
+    # Zero-R
+    outputs["Majority Class (Zero-R)"] = (np.zeros_like(y_test), np.full(len(y_test), 0.5), True)
+
+    # Logistic Regression
+    lr = Pipeline([('prep', get_preprocessor()),
+                   ('clf', LogisticRegression(C=1.0, random_state=seed, max_iter=1000))]).fit(X_tr_sk, y_train_res)
+    outputs["Logistic Regression"] = (lr.predict(X_te_sk), lr.predict_proba(X_te_sk)[:, 1], False)
+
+    # C4.5 (ChefBoost), fitted in a temporary directory so outputs/rules/rules.py is untouched
+    tree = fit_chefboost_isolated(X_train_res, y_train_res)
+    tree.fit_leaf_scores(X_train_res, y_train_res)
+    outputs["C4.5 (ChefBoost)"] = (tree.predict(X_test_raw), tree.predict_score(X_test_raw), False)
+
+    # RIPPER
+    rip = lw.RIPPER(random_state=seed)
+    rip.fit(to_ripper(X_train_res), y_train_res, pos_class=1)
+    rip_pred = np.array([1 if p else 0 for p in rip.predict(to_ripper(X_test_raw))])
+    outputs["RIPPER (Wittgenstein)"] = (rip_pred, rip.predict_proba(to_ripper(X_test_raw))[:, 1], False)
+
+    # Random Forest
+    rf = Pipeline([('prep', get_preprocessor()),
+                   ('clf', RandomForestClassifier(**RF_PARAMS, random_state=seed, n_jobs=1))]).fit(X_tr_sk, y_train_res)
+    outputs["Random Forest"] = (rf.predict(X_te_sk), rf.predict_proba(X_te_sk)[:, 1], False)
+
+    # SVM
+    svm = Pipeline([('prep', get_preprocessor()),
+                    ('clf', SVC(**SVM_PARAMS, probability=True, random_state=seed))]).fit(X_tr_sk, y_train_res)
+    outputs["Support Vector Machine"] = (svm.predict(X_te_sk), svm.predict_proba(X_te_sk)[:, 1], False)
+
+    for m in MODELS:
+        pred, prob, const = outputs[m]
+        res = eval_metrics(y_test, pred, prob, constant_score=const)
+        for k in METRICS:
+            models_results[m][k].append(res[k])
+        per_seed_rows.append({"Seed": seed, "Model": m, **res})
+
+print("\nAll seeds completed.\n")
+
 summary_rows = []
-print("="*120)
-print(f"{'Model Architecture':<30} | {'Global Accuracy':<17} | {'Sensitivity (Pos)':<18} | {'Specificity (Neg)':<18} | {'Precision (Pos)':<18} | {'Macro F1':<15} | {'ROC-AUC':<14} | {'PR-AUC':<14}")
-print("="*120)
-
-for model_name, metrics in models_results.items():
-    row_dict = {"Model": model_name}
-    line = f"{model_name:<30} | "
+print("=" * 160)
+print(f"{'Model':<26} | {'Accuracy':<17} | {'Sensitivity':<17} | {'Specificity':<17} | {'Precision (pos)':<17} | "
+      f"{'Macro F1':<17} | {'ROC-AUC':<16} | {'PR-AUC (AP)':<16}")
+print("=" * 160)
+for m in MODELS:
+    row = {"Model": m}
+    parts = []
     for k in ["Accuracy", "Sensitivity", "Specificity", "Precision_Pos", "Macro_F1", "ROC_AUC", "PR_AUC"]:
-        vals = np.array(metrics[k])
-        mean_v = np.mean(vals)
-        std_v = np.std(vals, ddof=1)
-        row_dict[f"{k}_Mean"] = mean_v
-        row_dict[f"{k}_Std"] = std_v
+        vals = np.array(models_results[m][k])
+        row[f"{k}_Mean"], row[f"{k}_Std"] = float(np.mean(vals)), float(np.std(vals, ddof=1))
+        row[f"{k}_Min"], row[f"{k}_Max"] = float(np.min(vals)), float(np.max(vals))
         if "AUC" in k:
-            val_str = f"{mean_v:.4f} ± {std_v:.4f}"
-            line += f"{val_str:<14} | "
+            parts.append(f"{np.mean(vals):.4f} ± {np.std(vals, ddof=1):.4f}".ljust(16))
         else:
-            val_str = f"{mean_v:.2f}% ± {std_v:.2f}%"
-            if k == "Accuracy":
-                line += f"{val_str:<17} | "
-            elif "Pos" in k or "Neg" in k or k == "Sensitivity" or k == "Specificity":
-                line += f"{val_str:<18} | "
-            else:
-                line += f"{val_str:<15} | "
-    print(line[:-3])
-    summary_rows.append(row_dict)
+            parts.append(f"{np.mean(vals):.2f}% ± {np.std(vals, ddof=1):.2f}%".ljust(17))
+    print(f"{m:<26} | " + " | ".join(parts))
+    summary_rows.append(row)
+print("=" * 160)
+print("Mean ± sample SD over 10 seeds. Zero-R ROC-AUC fixed at 0.5 and PR-AUC equals test prevalence.")
+print("C4.5 ROC/PR use Laplace leaf scores from the ChefBoost tree grown for that seed.")
 
-print("="*120)
-
-# Save to CSV and Markdown
-summary_df = pd.DataFrame(summary_rows)
-summary_df.to_csv("outputs/multiseed_stability_results.csv", index=False)
-print("\nExported multi-seed stability results to outputs/multiseed_stability_results.csv")
+pd.DataFrame(summary_rows).to_csv("outputs/multiseed_stability_results.csv", index=False)
+pd.DataFrame(per_seed_rows).to_csv("outputs/multiseed_stability_per_seed.csv", index=False)
+print("\nExported outputs/multiseed_stability_results.csv and outputs/multiseed_stability_per_seed.csv")

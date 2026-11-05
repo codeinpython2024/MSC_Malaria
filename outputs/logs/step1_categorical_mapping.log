@@ -2,7 +2,7 @@
 EXECUTION LOG: Stage 1: Categorical Mapping & Value Stabilization
 Script: first_stage.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 1.14 seconds
+Execution Duration: 1.65 seconds
 Exit Code: 0
 ================================================================================
 

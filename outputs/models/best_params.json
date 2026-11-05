@@ -1,0 +1,15 @@
+{
+  "random_forest": {
+    "max_depth": 5,
+    "min_samples_split": 10,
+    "n_estimators": 50
+  },
+  "random_forest_cv_macro_f1": 0.5061152452012532,
+  "svm": {
+    "C": 1,
+    "gamma": 0.01,
+    "kernel": "rbf"
+  },
+  "svm_cv_macro_f1": 0.5518389559547446,
+  "tuning_protocol": "GridSearchCV on the 194 original training rows; StratifiedKFold(5, shuffle, random_state=42); SMOTE-NC (k=5) fitted inside each training fold only; scoring=f1_macro; final model refitted on X_train_resampled.csv"
+}

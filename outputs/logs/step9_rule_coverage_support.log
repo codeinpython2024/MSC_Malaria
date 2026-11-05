@@ -1,13 +1,13 @@
 ================================================================================
-EXECUTION LOG: Stage 10: Rule Support, Coverage & Calibrated ROC Thresholds
+EXECUTION LOG: Stage 10: Rule Support & Coverage Audit (C4.5 leaves, RIPPER rules)
 Script: step9_rule_coverage_support.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 2.06 seconds
+Execution Duration: 3.80 seconds
 Exit Code: 0
 ================================================================================
 
 ==========================================================================================
-STEP 9: RULE COVERAGE, SUPPORT AUDIT & CALIBRATED ROC IMPLEMENTATION (ITEMS 10 & 11)
+STEP 9: RULE COVERAGE AND SUPPORT AUDIT (C4.5 LEAVES FROM rules.py, RIPPER RULES)
 ==========================================================================================
 
 [1/3] Fitting RIPPER and parsing individual propositional rules...
@@ -20,45 +20,66 @@ Induced RIPPER Ruleset (2 target rules):
 ==================================================================================================================================
 RIPPER PROPOSITIONAL RULE SUPPORT & COVERAGE AUDIT MATRIX
 ==================================================================================================================================
-Rule Statement                                     | Dataset                      | Support (n) | Coverage (%)  | TP   | FP   | Confidence (%) | Recall (%)
+Rule Statement                                     | Dataset                              | Support (n) | Coverage (%)  | TP   | FP   | Confidence (%) | Recall (%)
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129 | Training (Resampled, N=316)  | 56          | 17.72       % | 52   | 4    | 92.86        % | 32.91    %
-RIPPER Rule R2: [v128=21^v129=31^14 < b19 <= 17]   | Training (Resampled, N=316)  | 17          | 5.38        % | 15   | 2    | 88.24        % | 9.49     %
-RIPPER Default Rule: [ELSE => Class 0]             | Training (Resampled, N=316)  | 243         | 76.90       % | 152  | 91   | 62.55        % | 96.20    %
-RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129 | Clinical Test (N=49)         | 2           | 4.08        % | 0    | 2    | 0.00         % | 0.00     %
-RIPPER Rule R2: [v128=21^v129=31^14 < b19 <= 17]   | Clinical Test (N=49)         | 1           | 2.04        % | 0    | 1    | 0.00         % | 0.00     %
-RIPPER Default Rule: [ELSE => Class 0]             | Clinical Test (N=49)         | 46          | 93.88       % | 37   | 9    | 80.43        % | 92.50    %
+RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129 | Training (resampled, N=316)          | 56          | 17.72       % | 52   | 4    | 92.86        % | 32.91    %
+RIPPER Rule R2: [v128=21^v129=31^b19=14.0-17.0]    | Training (resampled, N=316)          | 17          | 5.38        % | 15   | 2    | 88.24        % | 9.49     %
+RIPPER Default Rule: [ELSE => Class 0]             | Training (resampled, N=316)          | 243         | 76.90       % | 152  | 91   | 62.55        % | 96.20    %
+RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129 | Training (original rows only, N=194) | 8           | 4.12        % | 4    | 4    | 50.00        % | 11.11    %
+RIPPER Rule R2: [v128=21^v129=31^b19=14.0-17.0]    | Training (original rows only, N=194) | 5           | 2.58        % | 3    | 2    | 60.00        % | 8.33     %
+RIPPER Default Rule: [ELSE => Class 0]             | Training (original rows only, N=194) | 181         | 93.30       % | 152  | 29   | 83.98        % | 96.20    %
+RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129 | Test (N=49)                          | 2           | 4.08        % | 0    | 2    | 0.00         % | 0.00     %
+RIPPER Rule R2: [v128=21^v129=31^b19=14.0-17.0]    | Test (N=49)                          | 1           | 2.04        % | 0    | 1    | 0.00         % | 0.00     %
+RIPPER Default Rule: [ELSE => Class 0]             | Test (N=49)                          | 46          | 93.88       % | 37   | 9    | 80.43        % | 92.50    %
 ==================================================================================================================================
+R1 (full): [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]
+R2 (full): [v128=21^v129=31^b19=14.0-17.0]
 
-[3/3] Auditing C4.5 Principal Decision Branches (Harmonized with Figure 4.5 & rules.py)...
+Exported outputs/ripper_rule_coverage_support.csv
 
-==================================================================================================================================
-C4.5 PRINCIPAL DECISION PATHWAY SUPPORT & COVERAGE AUDIT MATRIX (HARMONIZED)
-==================================================================================================================================
-Pathway Description                                | Dataset                      | Support (n) | Coverage (%)  | TP   | FP   | Confidence (%) | Recall (%)
+[3/3] Auditing C4.5 leaves and named pathways (parsed from outputs/rules/rules.py)...
+ - 46 leaves audited on 3 cohorts -> outputs/c45_leaf_support_all.csv
+
+======================================================================================================================================================
+C4.5 NAMED PATHWAY SUPPORT & COVERAGE AUDIT (Precision = share of covered children in the predicted class)
+======================================================================================================================================================
+Pathway  | Leaves | Class    | Dataset                              | Support | Coverage  | TP   | FP   | Precision | Recall   | Pos in path
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-Pathway C1: Infancy Protection [b19 <= 6 => Class  | Training (Resampled, N=316)  | 5           | 1.58        % | 5    | 0    | 100.00       % | 3.16     %
-Pathway C2: Protected Well x Metal Roof [b19>6 ^ v | Training (Resampled, N=316)  | 124         | 39.24       % | 100  | 24   | 80.65        % | 63.29    %
-Pathway C3: Rainwater x Maternal Illiteracy [b19>6 | Training (Resampled, N=316)  | 49          | 15.51       % | 26   | 23   | 53.06        % | 16.46    %
-Pathway C4: Borehole/Well x Mud Walls [b19>6 ^ v15 | Training (Resampled, N=316)  | 28          | 8.86        % | 17   | 11   | 60.71        % | 10.76    %
-Pathway C5: Intervention Paradox [b19>6 ^ v158=0 ^ | Training (Resampled, N=316)  | 1           | 0.32        % | 1    | 0    | 100.00       % | 0.63     %
-Pathway C1: Infancy Protection [b19 <= 6 => Class  | Clinical Test (N=49)         | 1           | 2.04        % | 1    | 0    | 100.00       % | 2.50     %
-Pathway C2: Protected Well x Metal Roof [b19>6 ^ v | Clinical Test (N=49)         | 9           | 18.37       % | 2    | 7    | 22.22        % | 22.22    %
-Pathway C3: Rainwater x Maternal Illiteracy [b19>6 | Clinical Test (N=49)         | 5           | 10.20       % | 0    | 5    | 0.00         % | 0.00     %
-Pathway C4: Borehole/Well x Mud Walls [b19>6 ^ v15 | Clinical Test (N=49)         | 4           | 8.16        % | 1    | 3    | 25.00        % | 11.11    %
-Pathway C5: Intervention Paradox [b19>6 ^ v158=0 ^ | Clinical Test (N=49)         | 0           | 0.00        % | 0    | 0    | 0.00         % | 0.00     %
-==================================================================================================================================
+C1       | 44     | Negative | Training (resampled, N=316)          | 5       | 1.58    % | 5    | 0    | 100.00  % | 3.16   % | 0          
+C1       | 44     | Negative | Training (original rows only, N=194) | 5       | 2.58    % | 5    | 0    | 100.00  % | 3.16   % | 0          
+C1       | 44     | Negative | Test (N=49)                          | 1       | 2.04    % | 1    | 0    | 100.00  % | 2.50   % | 0          
+C2       | 0      | Positive | Training (resampled, N=316)          | 124     | 39.24   % | 100  | 24   | 80.65   % | 63.29  % | 100        
+C2       | 0      | Positive | Training (original rows only, N=194) | 35      | 18.04   % | 11   | 24   | 31.43   % | 30.56  % | 11         
+C2       | 0      | Positive | Test (N=49)                          | 9       | 18.37   % | 2    | 7    | 22.22   % | 22.22  % | 2          
+C3       | 5      | Positive | Training (resampled, N=316)          | 49      | 15.51   % | 26   | 23   | 53.06   % | 16.46  % | 26         
+C3       | 5      | Positive | Training (original rows only, N=194) | 28      | 14.43   % | 5    | 23   | 17.86   % | 13.89  % | 5          
+C3       | 5      | Positive | Test (N=49)                          | 5       | 10.20   % | 0    | 5    | 0.00    % | 0.00   % | 0          
+C4       | 9,14   | Positive | Training (resampled, N=316)          | 28      | 8.86    % | 17   | 11   | 60.71   % | 10.76  % | 17         
+C4       | 9,14   | Positive | Training (original rows only, N=194) | 17      | 8.76    % | 6    | 11   | 35.29   % | 16.67  % | 6          
+C4       | 9,14   | Positive | Test (N=49)                          | 4       | 8.16    % | 1    | 3    | 25.00   % | 11.11  % | 1          
+C5       | 23     | Positive | Training (resampled, N=316)          | 1       | 0.32    % | 1    | 0    | 100.00  % | 0.63   % | 1          
+C5       | 23     | Positive | Training (original rows only, N=194) | 1       | 0.52    % | 1    | 0    | 100.00  % | 2.78   % | 1          
+C5       | 23     | Positive | Test (N=49)                          | 0       | 0.00    % | 0    | 0    | 0.00    % | 0.00   % | 0          
+======================================================================================================================================================
+C1 = Leaf 44 (Negative): b19 <= 6
+C2 = Leaf 0 (Positive): b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 0 (No) AND v113 = 31 (Protected well) AND v129 = 31 (Metal/zinc)
+C3 = Leaf 5 (Positive): b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 0 (No) AND v113 = 43 (Surface water (river/dam/lake/pond/stream)) AND v106 = 0 (No education)
+C4 = Leaf 9 (Positive): b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 0 (No) AND v113 = 21 (Tube well or borehole) AND v128 = 21 (Bamboo with mud)
+C4 = Leaf 14 (Positive): b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 0 (No) AND v113 = 32 (Unprotected well) AND v128 = 21 (Bamboo with mud)
+C5 = Leaf 23 (Positive): b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 1 (Yes) AND v119 = 1 (Yes) AND v190 = 2 (Poorer)
 
-Exported RIPPER rule support matrix to outputs/ripper_rule_coverage_support.csv and updated.csv.
-Exported C4.5 pathway support matrix to outputs/c45_pathway_coverage_support.csv and updated.csv.
+Exported outputs/c45_pathway_coverage_support.csv
 
-==========================================================================================
-ITEM 11: CALIBRATED CONTINUOUS ROC IMPLEMENTATION VS DISCRETE HARD PROJECTIONS
-==========================================================================================
+Other leaves predicting 'Positive' (not in the named pathways):
+  Leaf 4: train n=0, positives=0 :: b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 0 (No) AND v113 = 31 (Protected well) AND v129 not in {31, 13, 22, 12} (value unseen at this node in training)
+  Leaf 17: train n=0, positives=0 :: b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 0 (No) AND v113 not in {31, 43, 21, 32} (value unseen at this node in training)
+  Leaf 25: train n=0, positives=0 :: b19 > 6 AND v158 = 0 (Not at all) AND hml20 = 1 (Yes) AND v119 = 1 (Yes) AND v190 not in {2, 4} (value unseen at this node in training)
+  Leaf 27: train n=0, positives=0 :: b19 > 6 AND v158 = 0 (Not at all) AND hml20 not in {0, 1} (value unseen at this node in training)
+  Leaf 35: train n=1, positives=1 :: b19 > 6 AND v158 = 2 (At least once a week) AND v128 = 31 (Cement) AND v113 = 32 (Unprotected well) AND b4 = 2 (Female)
+  Leaf 39: train n=1, positives=1 :: b19 > 6 AND v158 = 2 (At least once a week) AND v128 = 13 (Dirt)
+  Leaf 43: train n=0, positives=0 :: b19 > 6 AND v158 not in {0, 2, 1} (value unseen at this node in training)
+  Leaf 45: train n=0, positives=0 :: b19 fails every preceding threshold test (unreachable for non-missing numeric values)
 
-C4.5 ROC & PR Implementation Comparison:
- - Hard Binary Step Curve (Old)       : ROC-AUC = 0.4792, PR-AUC = 0.3112
- - Continuous Calibrated Leaf Curves  : ROC-AUC = 0.4653, PR-AUC = 0.1570
- - Number of Operating Thresholds    : Hard = 3 points, Calibrated = 10 points
-
-Conclusion for Item 11: Continuous probability calibration resolves the stepped curve artifact while confirming weak discriminative signal (0.4653).
+C4.5 discrimination on the test partition:
+ - Laplace leaf-score ROC-AUC = 0.4181, AP = 0.1846 (11 distinct scores)
+ - Hard-label ROC-AUC         = 0.4792, AP = 0.1780

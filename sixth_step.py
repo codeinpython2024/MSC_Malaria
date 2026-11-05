@@ -1,52 +1,64 @@
 import os
 import sys
+import io
 import pickle
 # pyrefly: ignore [missing-import]
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
+from sklearn.metrics import confusion_matrix, roc_curve, auc, average_precision_score, roc_auc_score
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
 
-# Guarantee dynamic path discovery for ChefBoost C4.5 rules.py
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
+# Guarantee dynamic path discovery for ChefBoost C4.5 rules.py and c45_tree_utils
 sys.path.insert(0, os.getcwd())
+from c45_tree_utils import C45Tree
 
-# Ensure output directory for plots exists
 os.makedirs(os.path.join("outputs", "plots"), exist_ok=True)
+os.makedirs(os.path.join("outputs", "models"), exist_ok=True)
+
+# Every number reported, plotted or saved by this script is computed from the
+# fitted models and the test partition. No metric values are typed in.
 
 # ------------------------------------------------------------------------------
 # 1. INGEST DATASETS
 # ------------------------------------------------------------------------------
-print("="*80)
+print("=" * 80)
 print("STAGE 8: JOINT PROGRAMMATIC EVALUATION AND STRUCTURAL COMPLEXITY PROFILING")
-print("="*80)
+print("=" * 80)
 
-print("\n[1/7] Ingesting datasets...")
+print("\n[1/8] Ingesting datasets...")
 try:
     X_train = pd.read_csv("X_train_resampled.csv")
-    Y_train = pd.read_csv("Y_train_resampled.csv")['hml32']
+    Y_train = pd.read_csv("Y_train_resampled.csv")['hml32'].astype(int)
     X_test = pd.read_csv("X_test.csv")
-    Y_test = pd.read_csv("Y_test.csv")['hml32']
-    print(f"Loaded successfully:")
+    Y_test = pd.read_csv("Y_test.csv")['hml32'].astype(int)
+    print("Loaded successfully:")
     print(f" - Train resampled instances: {len(X_train)}")
-    print(f" - Test clinical instances: {len(X_test)}")
+    print(f" - Test clinical instances: {len(X_test)} ({int(Y_test.sum())} positive)")
 except Exception as e:
     print(f"Error loading datasets: {e}")
     sys.exit(1)
 
+y_test = Y_test.values
+prevalence = float(y_test.mean())
+
 # ------------------------------------------------------------------------------
 # 2. DATA PREPARATION FOR DISTINCT MODELS
 # ------------------------------------------------------------------------------
-print("\n[2/7] Customizing datatypes for model spaces...")
+print("\n[2/8] Customizing datatypes for model spaces...")
 
+continuous_feature = ['b19']
 nominal_features = ['b4', 'v106', 'v190', 'v119', 'v158', 'v127', 'v128', 'v129', 'v113', 'v116', 'hml20']
 
-# 2A. Preprocessing for C4.5 (Discrete structures & list projection)
-# We cast according to the signature inside outputs/rules/rules.py
-X_test_c45 = X_test.copy()
-X_test_c45['b19'] = X_test_c45['b19'].astype(int)
-for col in nominal_features:
-    X_test_c45[col] = X_test_c45[col].astype(int).astype(str).astype(object)
-
-# 2B. Preprocessing for RIPPER
+# RIPPER
 X_train_ripper = X_train.copy()
 X_test_ripper = X_test.copy()
 X_train_ripper['b19'] = X_train_ripper['b19'].astype(int)
@@ -55,15 +67,13 @@ for col in nominal_features:
     X_train_ripper[col] = X_train_ripper[col].astype(int).astype(str).astype(object)
     X_test_ripper[col] = X_test_ripper[col].astype(int).astype(str).astype(object)
 
-# 2C. Preprocessing for Black-Box (RF & SVM pipelines, Decision Tree & Logistic Regression)
+# scikit-learn pipelines (Logistic Regression, RF, SVM)
 X_train_bb = X_train.copy()
-X_train_bb['b19'] = X_train_bb['b19'].astype(float)
-for col in nominal_features:
-    X_train_bb[col] = X_train_bb[col].astype(int).astype(str)
-
 X_test_bb = X_test.copy()
+X_train_bb['b19'] = X_train_bb['b19'].astype(float)
 X_test_bb['b19'] = X_test_bb['b19'].astype(float)
 for col in nominal_features:
+    X_train_bb[col] = X_train_bb[col].astype(int).astype(str)
     X_test_bb[col] = X_test_bb[col].astype(int).astype(str)
 
 print(" - Datatypes partitioned and stabilized.")
@@ -71,532 +81,309 @@ print(" - Datatypes partitioned and stabilized.")
 # ------------------------------------------------------------------------------
 # 3. MODEL INGESTION & TEST SET PREDICTIONS
 # ------------------------------------------------------------------------------
-print("\n[3/7] Loading models and generating predictions...")
+print("\n[3/8] Loading models and generating predictions...")
 
-# --- C4.5 Decision Tree (ChefBoost & Calibrated Leaf Probabilities) ---
-c45_preds = []
-c45_probs = []  # Hard prediction mapped to 1.0/0.0
-c45_cal_probs = None # Calibrated continuous leaf posterior probabilities
-try:
-    from outputs.rules.rules import findDecision
-    print(" - Dynamically imported compiled C4.5 rules.py successfully.")
-    
-    for idx, row in X_test_c45.iterrows():
-        obj = [
-            row['b19'], row['b4'], row['v106'], row['v190'], row['v119'], 
-            row['v158'], row['v127'], row['v128'], row['v129'], row['v113'], 
-            row['v116'], row['hml20']
-        ]
-        pred_str = findDecision(obj)
-        pred_val = 1 if pred_str == 'Positive' else 0
-        c45_preds.append(pred_val)
-        c45_probs.append(float(pred_val))
-    c45_preds = np.array(c45_preds)
-    c45_probs = np.array(c45_probs)
-    print(" - Generated discrete predictions for C4.5 Decision Tree.")
+preds, scores = {}, {}
 
-    # Item 11 Fix: Generate continuous calibrated leaf posterior probabilities
-    # using entropy-based decision tree matching C4.5 specification
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.compose import ColumnTransformer
-    from sklearn.preprocessing import StandardScaler, OneHotEncoder
-    from sklearn.pipeline import Pipeline
-    
-    continuous_feature = ['b19']
-    preprocessor_c45 = ColumnTransformer(
-        transformers=[
-            ('num', StandardScaler(), continuous_feature),
-            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), nominal_features)
-        ]
-    )
-    dt_pipe = Pipeline([
-        ('prep', preprocessor_c45),
-        ('clf', DecisionTreeClassifier(criterion='entropy', random_state=42, min_samples_leaf=3))
-    ])
-    dt_pipe.fit(X_train_bb, Y_train)
-    c45_cal_probs = dt_pipe.predict_proba(X_test_bb)[:, 1]
-    print(" - Item 11 Fix: Generated continuous calibrated leaf posterior probabilities for C4.5.")
-except Exception as e:
-    print(f"Error executing C4.5 evaluation: {e}")
-    c45_preds = None
+# --- Majority class (Zero-R) ---
+preds['Zero-R'] = np.zeros(len(y_test), dtype=int)
+scores['Zero-R'] = np.full(len(y_test), float(Y_train.mean()))   # constant score
+print(" - Zero-R: predicts the negative class for every child.")
 
-# --- Logistic Regression Pipeline (Linear Baseline) ---
-lr_preds = None
-lr_probs = None
-try:
-    from sklearn.linear_model import LogisticRegression
-    lr_pipe = Pipeline([
-        ('prep', preprocessor_c45),
-        ('clf', LogisticRegression(C=1.0, random_state=42, max_iter=1000))
-    ])
-    lr_pipe.fit(X_train_bb, Y_train)
-    lr_preds = lr_pipe.predict(X_test_bb)
-    lr_probs = lr_pipe.predict_proba(X_test_bb)[:, 1]
-    print(" - Generated predictions and probabilities for Logistic Regression Baseline.")
-except Exception as e:
-    print(f"Error executing Logistic Regression evaluation: {e}")
+# --- C4.5 Decision Tree (ChefBoost rules.py) ---
+# Hard labels come from rules.py. The continuous score is the Laplace-corrected
+# positive frequency of the training records in the leaf each child reaches
+# (see c45_tree_utils.py). C45Tree.leaf_ids() asserts that its routing agrees
+# with ChefBoost's own findDecision() for every row.
+c45_tree = C45Tree.from_file(os.path.join("outputs", "rules", "rules.py"))
+preds['C4.5'] = c45_tree.predict(X_test)
+c45_tree.fit_leaf_scores(X_train, Y_train)
+scores['C4.5'] = c45_tree.predict_score(X_test)
+c45_hard_score = preds['C4.5'].astype(float)
+print(f" - C4.5: {len(c45_tree.leaves)} leaves parsed from rules.py; "
+      f"{len(np.unique(scores['C4.5']))} distinct leaf scores on the test set.")
+
+# --- Logistic Regression (linear baseline) ---
+lr_pipe = Pipeline([
+    ('prep', ColumnTransformer(transformers=[
+        ('num', StandardScaler(), continuous_feature),
+        ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), nominal_features)
+    ])),
+    ('clf', LogisticRegression(C=1.0, random_state=42, max_iter=1000))
+])
+lr_pipe.fit(X_train_bb, Y_train)
+preds['Logistic Regression'] = lr_pipe.predict(X_test_bb)
+scores['Logistic Regression'] = lr_pipe.predict_proba(X_test_bb)[:, 1]
+lr_n_coef = int(lr_pipe.named_steps['clf'].coef_.shape[1])
+print(f" - Logistic Regression: fitted on {lr_n_coef} encoded inputs "
+      f"(1 scaled age column + one-hot columns for 11 nominal variables).")
 
 # --- RIPPER Ruleset (Wittgenstein) ---
-ripper_preds = None
-ripper_probs = None
-ripper_model = None
-try:
-    import wittgenstein as lw
-    print(" - Ingesting Wittgenstein and training RIPPER ruleset on-the-fly...")
-    ripper_model = lw.RIPPER(random_state=42)
-    ripper_model.fit(X_train_ripper, Y_train, pos_class=1)
-    
-    # Predict classes and probability distribution
-    ripper_raw_preds = ripper_model.predict(X_test_ripper)
-    ripper_preds = np.array([1 if p else 0 for p in ripper_raw_preds])
-    ripper_probs = ripper_model.predict_proba(X_test_ripper)[:, 1]
-    print(" - Generated predictions and probability outputs for RIPPER.")
-except Exception as e:
-    print(f"Error executing RIPPER evaluation: {e}")
+import wittgenstein as lw
+ripper_model = lw.RIPPER(random_state=42)
+ripper_model.fit(X_train_ripper, Y_train, pos_class=1)
+preds['RIPPER'] = np.array([1 if p else 0 for p in ripper_model.predict(X_test_ripper)])
+scores['RIPPER'] = ripper_model.predict_proba(X_test_ripper)[:, 1]
+print(f" - RIPPER: {len(ripper_model.ruleset_.rules)} rules induced.")
 
-# --- Random Forest Pipeline ---
-rf_preds = None
-rf_probs = None
-try:
-    rf_model_path = os.path.join("outputs", "models", "random_forest_pipeline.pkl")
-    with open(rf_model_path, 'rb') as f:
-        rf_pipeline = pickle.load(f)
-    print(f" - Loaded serialized Random Forest pipeline from: {rf_model_path}")
-    rf_preds = rf_pipeline.predict(X_test_bb)
-    rf_probs = rf_pipeline.predict_proba(X_test_bb)[:, 1]
-    print(" - Generated predictions and probability outputs for Random Forest.")
-except Exception as e:
-    print(f"Error executing Random Forest evaluation: {e}")
+# --- Random Forest & SVM (pipelines tuned and saved by fifth_step.py) ---
+with open(os.path.join("outputs", "models", "random_forest_pipeline.pkl"), 'rb') as f:
+    rf_pipeline = pickle.load(f)
+preds['Random Forest'] = rf_pipeline.predict(X_test_bb)
+scores['Random Forest'] = rf_pipeline.predict_proba(X_test_bb)[:, 1]
 
-# --- Support Vector Machine Pipeline ---
-svm_preds = None
-svm_probs = None
-try:
-    svm_model_path = os.path.join("outputs", "models", "svm_pipeline.pkl")
-    with open(svm_model_path, 'rb') as f:
-        svm_pipeline = pickle.load(f)
-    print(f" - Loaded serialized SVM pipeline from: {svm_model_path}")
-    svm_preds = svm_pipeline.predict(X_test_bb)
-    svm_probs = svm_pipeline.predict_proba(X_test_bb)[:, 1]
-    print(" - Generated predictions and probability outputs for SVM.")
-except Exception as e:
-    print(f"Error executing SVM evaluation: {e}")
+with open(os.path.join("outputs", "models", "svm_pipeline.pkl"), 'rb') as f:
+    svm_pipeline = pickle.load(f)
+preds['SVM'] = svm_pipeline.predict(X_test_bb)
+scores['SVM'] = svm_pipeline.predict_proba(X_test_bb)[:, 1]
+print(" - Random Forest and SVM pipelines loaded from outputs/models/.")
 
+MODEL_ORDER = ['Zero-R', 'Logistic Regression', 'C4.5', 'RIPPER', 'Random Forest', 'SVM']
 
 # ------------------------------------------------------------------------------
-# 4. COMPUTE AND PROFILE STATISTICAL METRICS
+# 4. COMPUTE METRICS
 # ------------------------------------------------------------------------------
-print("\n[4/7] Generating comparative evaluation metrics...")
+print("\n[4/8] Generating comparative evaluation metrics...")
 
-def compute_metrics(y_true, y_pred, name):
-    if y_pred is None:
-        return None
-    cm = confusion_matrix(y_true, y_pred)
+
+def compute_metrics(y_true, y_pred, y_score, name, constant_score=False):
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     tn, fp, fn, tp = cm.ravel()
-    
     accuracy = (tp + tn) / (tp + tn + fp + fn)
-    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0 # Recall of positive class
-    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0 # Recall of negative class
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    
-    # Calculate macro F1 manually to verify consistency
+    npv = tn / (tn + fn) if (tn + fn) > 0 else 0.0
     f1_pos = 2 * precision * sensitivity / (precision + sensitivity) if (precision + sensitivity) > 0 else 0.0
-    precision_neg = tn / (tn + fn) if (tn + fn) > 0 else 0.0
-    f1_neg = 2 * precision_neg * specificity / (precision_neg + specificity) if (precision_neg + specificity) > 0 else 0.0
+    f1_neg = 2 * npv * specificity / (npv + specificity) if (npv + specificity) > 0 else 0.0
     macro_f1 = (f1_pos + f1_neg) / 2
-    
+    # A constant score carries no ranking information: ROC-AUC = 0.5 and
+    # average precision = prevalence by definition.
+    roc_auc = 0.5 if constant_score else roc_auc_score(y_true, y_score)
+    pr_auc = float(np.mean(y_true)) if constant_score else average_precision_score(y_true, y_score)
     return {
-        "Name": name,
-        "Accuracy": accuracy,
-        "Precision": precision,
-        "Sensitivity (Recall)": sensitivity,
-        "Specificity": specificity,
-        "Macro F1": macro_f1,
-        "CM": cm
+        "Model": name, "TN": int(tn), "FP": int(fp), "FN": int(fn), "TP": int(tp),
+        "Accuracy": accuracy, "Sensitivity": sensitivity, "Specificity": specificity,
+        "Precision": precision, "NPV": npv, "F1_Pos": f1_pos, "F1_Neg": f1_neg,
+        "Macro_F1": macro_f1, "ROC_AUC": roc_auc, "PR_AUC_AP": pr_auc,
     }
 
-results = []
-for preds, label in [(c45_preds, "C4.5 Decision Tree"), 
-                     (ripper_preds, "RIPPER Ruleset"), 
-                     (rf_preds, "Random Forest"), 
-                     (svm_preds, "Support Vector Machine")]:
-    res = compute_metrics(Y_test, preds, label)
-    if res:
-        results.append(res)
 
-print("\n" + "="*80)
-print("PERFORMANCE EVALUATION MATRIX (CLINICAL TEST SET, N=49)")
-print("="*80)
-print(f"{'Classifier Model':<28} | {'Accuracy':<8} | {'Precision':<9} | {'Sensitivity':<11} | {'Specificity':<11} | {'Macro F1':<8}")
-print("-" * 88)
-for res in results:
-    print(f"{res['Name']:<28} | {res['Accuracy']:<8.4f} | {res['Precision']:<9.4f} | {res['Sensitivity (Recall)']:<11.4f} | {res['Specificity']:<11.4f} | {res['Macro F1']:<8.4f}")
-print("="*80)
+results = {m: compute_metrics(y_test, preds[m], scores[m], m, constant_score=(m == 'Zero-R'))
+           for m in MODEL_ORDER}
 
-for res in results:
-    print(f"\n[{res['Name']}] Confusion Matrix:")
-    print(res['CM'])
+# C4.5 hard-label (single operating point) AUC, reported alongside the leaf-score AUC
+c45_hard_auc = roc_auc_score(y_test, c45_hard_score)
+c45_hard_ap = average_precision_score(y_test, c45_hard_score)
 
-# ------------------------------------------------------------------------------
-# 5. GENERATE AND SAVE PLOTS (AUC-ROC CURVES)
-# ------------------------------------------------------------------------------
-print("\n[5/7] Graphing comparative Receiver Operating Characteristic (ROC) curves...")
+print("\n" + "=" * 132)
+print("PERFORMANCE EVALUATION MATRIX (CLINICAL TEST SET, N=49) -- point estimates")
+print("=" * 132)
+print(f"{'Model':<22} | {'CM [[TN,FP],[FN,TP]]':<20} | {'Acc':<7} | {'Sens':<7} | {'Spec':<7} | "
+      f"{'Prec':<7} | {'NPV':<7} | {'F1+':<7} | {'F1-':<7} | {'MacroF1':<7} | {'ROC-AUC':<7} | {'PR-AUC(AP)':<9}")
+print("-" * 132)
+for m in MODEL_ORDER:
+    r = results[m]
+    cm_str = f"[[{r['TN']},{r['FP']}],[{r['FN']},{r['TP']}]]"
+    print(f"{m:<22} | {cm_str:<20} | {r['Accuracy']:.4f} | {r['Sensitivity']:.4f} | {r['Specificity']:.4f} | "
+          f"{r['Precision']:.4f} | {r['NPV']:.4f} | {r['F1_Pos']:.4f} | {r['F1_Neg']:.4f} | "
+          f"{r['Macro_F1']:.4f}  | {r['ROC_AUC']:.4f}  | {r['PR_AUC_AP']:.4f}")
+print("=" * 132)
+print(f"PR-AUC is average precision (sklearn.metrics.average_precision_score). "
+      f"No-skill baseline = test prevalence = {prevalence:.4f}.")
+print(f"C4.5 ROC-AUC above uses Laplace leaf scores. Hard-label (single operating point) "
+      f"ROC-AUC = {c45_hard_auc:.4f}, hard-label AP = {c45_hard_ap:.4f}.")
 
-try:
-    import matplotlib.pyplot as plt
-    
-    plt.figure(figsize=(10, 8), dpi=300)
-    
-    # Item 11 Fix: Evaluates continuous calibrated curves and baselines alongside discrete points
-    curves = [
-        ("Logistic Regression (Linear Baseline)", lr_probs, '#17becf'),
-        ("Random Forest (Ensemble Benchmark)", rf_probs, '#2ca02c'),
-        ("Support Vector Machine (RBF Kernel)", svm_probs, '#9467bd'),
-        ("C4.5 Decision Tree (Calibrated Leaf)", c45_cal_probs, '#1f77b4'),
-        ("RIPPER Ruleset (Rule-Confidence Curve)", ripper_probs, '#ff7f0e')
-    ]
-    
-    for label, probs, color in curves:
-        if probs is not None:
-            fpr, tpr, _ = roc_curve(Y_test, probs)
-            roc_auc = auc(fpr, tpr)
-            plt.plot(fpr, tpr, label=f'{label} (AUC = {roc_auc:.4f})', lw=2.2, color=color)
-            print(f" - Computed ROC for {label} (AUC = {roc_auc:.4f})")
+pd.DataFrame([results[m] for m in MODEL_ORDER]).to_csv(
+    os.path.join("outputs", "test_point_metrics.csv"), index=False)
+print("Point metrics written to outputs/test_point_metrics.csv")
 
-    # Item 11: Plot C4.5 discrete operating threshold point to contrast against continuous sweep
-    if c45_probs is not None:
-        fpr_hard, tpr_hard, _ = roc_curve(Y_test, c45_probs)
-        plt.plot(fpr_hard, tpr_hard, label=f'C4.5 Discrete Step (AUC = {auc(fpr_hard, tpr_hard):.4f})', 
-                 lw=1.5, color='#1f77b4', linestyle=':', alpha=0.6)
-        plt.scatter([fpr_hard[1]], [tpr_hard[1]], color='#1f77b4', s=60, zorder=5, 
-                    label=f'C4.5 Operating Point (Sens={tpr_hard[1]:.2f}, FPR={fpr_hard[1]:.2f})')
-            
-    # Baseline diagonal representation
-    plt.plot([0, 1], [0, 1], color='grey', linestyle='--', lw=1.5, label='Random Guessing (AUC = 0.5000)')
-    
-    plt.xlim([-0.02, 1.02])
-    plt.ylim([-0.02, 1.02])
-    plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12, fontweight='bold', labelpad=10)
-    plt.ylabel('True Positive Rate (Sensitivity / Recall)', fontsize=12, fontweight='bold', labelpad=10)
-    plt.title('Microscopy-Confirmed Malaria Diagnosis: ROC Curve Comparison\n(Touchless Clinical Test Partition, Rural Nasarawa State)', 
-              fontsize=13, fontweight='bold', pad=15)
-    plt.legend(loc="lower right", fontsize=11, frameon=True, facecolor='white', edgecolor='#e2e2e2', shadow=False)
-    plt.grid(True, linestyle=':', alpha=0.6, color='#cbcbcb')
-    
-    # Premium visual framing
-    ax = plt.gca()
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#888888')
-    ax.spines['bottom'].set_color('#888888')
-    
-    plot_path = os.path.join("outputs", "plots", "roc_comparison.png")
-    plt.tight_layout()
-    plt.savefig(plot_path, dpi=300)
-    plt.close()
-    print(f"\n - Premium ROC graph successfully exported and persisted to: {plot_path}")
-
-except Exception as e:
-    print(f"Error plotting ROC curves: {e}")
-    import traceback
-    traceback.print_exc()
+# Save the real predictions and scores for the bootstrap (run_bootstrap_ci_final.py)
+np.savez(
+    os.path.join("outputs", "models", "test_predictions.npz"),
+    Y_test=y_test,
+    pred_zero=preds['Zero-R'], prob_zero=scores['Zero-R'],
+    pred_lr=preds['Logistic Regression'], prob_lr=scores['Logistic Regression'],
+    pred_c45=preds['C4.5'], prob_c45=scores['C4.5'], prob_c45_hard=c45_hard_score,
+    pred_ripper=preds['RIPPER'], prob_ripper=scores['RIPPER'],
+    pred_rf=preds['Random Forest'], prob_rf=scores['Random Forest'],
+    pred_svm=preds['SVM'], prob_svm=scores['SVM'],
+)
+print("Test-set predictions and scores saved to outputs/models/test_predictions.npz")
 
 # ------------------------------------------------------------------------------
-# 6. WHITE-BOX RULES STRUCTURAL COMPLEXITY PROFILING
+# 5. ROC CURVES
 # ------------------------------------------------------------------------------
-print("\n[6/7] Programmatically parsing rulesets for structural complexity...")
+print("\n[5/8] Graphing comparative ROC curves...")
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
-c45_rules_count = 0
-c45_depths = []
-c45_mean_literals = 0.0
+colors = {'Logistic Regression': '#17becf', 'Random Forest': '#2ca02c', 'SVM': '#9467bd',
+          'C4.5': '#1f77b4', 'RIPPER': '#ff7f0e'}
+curve_labels = {'Logistic Regression': 'Logistic Regression',
+                'Random Forest': 'Random Forest',
+                'SVM': 'SVM (RBF)',
+                'C4.5': 'C4.5 (Laplace leaf scores)',
+                'RIPPER': 'RIPPER (rule-confidence scores)'}
 
-try:
-    rules_path = os.path.join("outputs", "rules", "rules.py")
-    if os.path.exists(rules_path):
-        with open(rules_path, 'r', encoding='UTF-8') as f:
-            lines = f.readlines()
-        
-        for line in lines:
-            stripped = line.strip()
-            if stripped.startswith("return "):
-                val = stripped.split("return ")[1].replace("'", "").replace('"', '')
-                if val in ['Positive', 'Negative']:
-                    c45_rules_count += 1
-                    leading_spaces = len(line) - len(line.lstrip(' '))
-                    # Indentation depth formula
-                    depth = (leading_spaces // 3) - 1
-                    c45_depths.append(depth)
-        
-        if c45_rules_count > 0:
-            c45_mean_literals = sum(c45_depths) / len(c45_depths)
-        print(" - Successfully parsed ChefBoost C4.5 rules.py.")
-    else:
-        print(" - Warning: outputs/rules/rules.py not found.")
-except Exception as e:
-    print(f"Error parsing C4.5 rules complexity: {e}")
+plt.figure(figsize=(10, 8), dpi=300)
+for m in ['Logistic Regression', 'Random Forest', 'SVM', 'C4.5', 'RIPPER']:
+    fpr, tpr, _ = roc_curve(y_test, scores[m])
+    plt.plot(fpr, tpr, lw=2.2, color=colors[m], label=f"{curve_labels[m]} (AUC = {auc(fpr, tpr):.4f})")
+    print(f" - ROC for {curve_labels[m]}: AUC = {auc(fpr, tpr):.4f}")
 
-ripper_rules_count = 0
-ripper_mean_literals = 0.0
-try:
-    if ripper_model is not None and hasattr(ripper_model, "ruleset_"):
-        ripper_rules_count = len(ripper_model.ruleset_.rules)
-        ripper_depths = [len(rule.conds) for rule in ripper_model.ruleset_.rules]
-        if ripper_rules_count > 0:
-            ripper_mean_literals = sum(ripper_depths) / len(ripper_depths)
-        print(" - Successfully parsed Wittgenstein RIPPER ruleset object.")
-    else:
-        print(" - Warning: RIPPER ruleset object not available.")
-except Exception as e:
-    print(f"Error profiling RIPPER rules complexity: {e}")
-
-print("\n" + "="*80)
-print("STRUCTURAL COMPLEXITY PROFILE SUMMARY")
-print("="*80)
-print(f"C4.5 Decision Tree:")
-print(f" - Absolute Terminal Rules (Leaf Paths): {c45_rules_count}")
-print(f" - Mean Number of Conditional Literals per path: {c45_mean_literals:.4f}")
-print(f"\nRIPPER Ruleset:")
-print(f" - Absolute Rule Statements: {ripper_rules_count}")
-print(f" - Mean Number of Conditional Conjuncts (Literals) per rule line: {ripper_mean_literals:.4f}")
-print("="*80)
+fpr_h, tpr_h, _ = roc_curve(y_test, c45_hard_score)
+plt.plot(fpr_h, tpr_h, lw=1.5, color='#1f77b4', linestyle=':', alpha=0.7,
+         label=f"C4.5 hard labels (AUC = {c45_hard_auc:.4f})")
+r = results['C4.5']
+plt.scatter([1 - r['Specificity']], [r['Sensitivity']], color='#1f77b4', s=60, zorder=5,
+            label=f"C4.5 operating point (Sens={r['Sensitivity']:.2f}, FPR={1 - r['Specificity']:.2f})")
+plt.plot([0, 1], [0, 1], color='grey', linestyle='--', lw=1.5, label='No discrimination (AUC = 0.5)')
+plt.xlim([-0.02, 1.02])
+plt.ylim([-0.02, 1.02])
+plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12, fontweight='bold')
+plt.ylabel('True Positive Rate (Sensitivity)', fontsize=12, fontweight='bold')
+plt.title('ROC curves on the test partition (N = 49, 9 positive)\nRural Nasarawa State, microscopy outcome',
+          fontsize=13, fontweight='bold')
+plt.legend(loc="lower right", fontsize=10, frameon=True)
+plt.grid(True, linestyle=':', alpha=0.6)
+plt.tight_layout()
+plt.savefig(os.path.join("outputs", "plots", "roc_comparison.png"), dpi=300)
+plt.close()
+print(" - ROC figure written to outputs/plots/roc_comparison.png")
 
 # ------------------------------------------------------------------------------
-# 7. FORMULATE ACCURACY-VERSUS-INTERPRETABILITY TRADE-OFF MATRIX
+# 6. WHITE-BOX STRUCTURAL COMPLEXITY
 # ------------------------------------------------------------------------------
-print("\n[7/7] Generating final Accuracy-versus-Interpretability Trade-Off Matrix...")
+print("\n[6/8] Profiling structural complexity...")
+leaf_counts_train = c45_tree.leaf_counts(X_train, Y_train)
+c45_n_leaves = len(c45_tree.leaves)
+c45_n_leaves_nonempty = int((leaf_counts_train['n'] > 0).sum())
+c45_mean_literals = float(np.mean([len(l.path) for l in c45_tree.leaves]))
+c45_mean_literals_nonempty = float(np.mean(
+    [len(l.path) for l in c45_tree.leaves if leaf_counts_train.loc[l.id, 'n'] > 0]))
 
-# We extract corresponding performance metrics
-metrics_map = {res['Name']: res for res in results}
+ripper_rules_count = len(ripper_model.ruleset_.rules)
+ripper_mean_literals = float(np.mean([len(rule.conds) for rule in ripper_model.ruleset_.rules])) \
+    if ripper_rules_count else 0.0
 
+rf_n_trees = len(rf_pipeline[-1].estimators_)
+svm_n_sv = int(np.sum(svm_pipeline[-1].n_support_))
+
+print(f"C4.5: {c45_n_leaves} leaves in rules.py ({c45_n_leaves_nonempty} reached by training records); "
+      f"mean conditions per leaf = {c45_mean_literals:.2f} (all) / {c45_mean_literals_nonempty:.2f} (reached)")
+print(f"RIPPER: {ripper_rules_count} rules + default; mean conditions per rule = {ripper_mean_literals:.2f}")
+for i, rule in enumerate(ripper_model.ruleset_.rules, 1):
+    print(f"   R{i}: {rule}")
+print(f"Logistic Regression: {lr_n_coef} coefficients + intercept")
+print(f"Random Forest: {rf_n_trees} trees")
+print(f"SVM: {svm_n_sv} support vectors (kernel = {svm_pipeline[-1].kernel})")
+
+# ------------------------------------------------------------------------------
+# 7. ACCURACY-VERSUS-INTERPRETABILITY TABLE
+# ------------------------------------------------------------------------------
+print("\n[7/8] Accuracy-versus-interpretability matrix...")
+complexity = {
+    'RIPPER': (ripper_rules_count, f"{ripper_rules_count} rules"),
+    'Logistic Regression': (lr_n_coef, f"{lr_n_coef} coefficients"),
+    'C4.5': (c45_n_leaves, f"{c45_n_leaves} leaves"),
+    'Random Forest': (rf_n_trees, f"{rf_n_trees} trees"),
+    'SVM': (svm_n_sv, f"{svm_n_sv} support vectors"),
+}
 tradeoff_rows = []
+for m in ['RIPPER', 'Logistic Regression', 'C4.5', 'Random Forest', 'SVM']:
+    r = results[m]
+    tradeoff_rows.append({"Model": m, "Complexity": complexity[m][1], "Complexity_N": complexity[m][0],
+                          "Accuracy": r['Accuracy'], "Sensitivity": r['Sensitivity'],
+                          "Macro_F1": r['Macro_F1'], "ROC_AUC": r['ROC_AUC'], "PR_AUC_AP": r['PR_AUC_AP']})
+tradeoff_df = pd.DataFrame(tradeoff_rows)
+print(tradeoff_df.to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+tradeoff_df.to_csv(os.path.join("outputs", "tradeoff_matrix.csv"), index=False)
 
-# Logistic Regression (Linear Baseline)
-lr_acc = 0.7143
-lr_f1 = 0.5236
-lr_sens = 0.2222
-tradeoff_rows.append(["Logistic Regression", "White-Box (Linear Log-Odds)", lr_acc, lr_f1, lr_sens, "12 Coefficients", "Linear (12)"])
+# ------------------------------------------------------------------------------
+# 8. ADDITIONAL FIGURES (all values taken from `results`)
+# ------------------------------------------------------------------------------
+print("\n[8/8] Generating remaining evaluation plots...")
+display = {'Zero-R': 'Majority-Class\n(Zero-R)', 'Logistic Regression': 'Logistic\nRegression',
+           'C4.5': 'C4.5 Decision\nTree', 'RIPPER': 'RIPPER\nRuleset', 'Random Forest': 'Random\nForest',
+           'SVM': 'Support Vector\nMachine'}
 
-# C4.5
-c45_acc = metrics_map.get("C4.5 Decision Tree", {}).get("Accuracy", np.nan)
-c45_f1 = metrics_map.get("C4.5 Decision Tree", {}).get("Macro F1", np.nan)
-c45_sens = metrics_map.get("C4.5 Decision Tree", {}).get("Sensitivity (Recall)", np.nan)
-tradeoff_rows.append(["C4.5 Decision Tree", "White-Box (Highly Transparent)", c45_acc, c45_f1, c45_sens, c45_rules_count, f"{c45_mean_literals:.2f}"])
+# 8A. Grouped bar chart
+metrics = [('Accuracy', 'Accuracy'), ('Precision', 'Precision'), ('Sensitivity', 'Sensitivity'),
+           ('Specificity', 'Specificity'), ('Macro_F1', 'Macro F1')]
+metric_colors = ['#2b5c8f', '#e67e22', '#27ae60', '#c0392b', '#8e44ad']
+x = np.arange(len(MODEL_ORDER))
+width = 0.14
+plt.figure(figsize=(14, 7.5), dpi=300)
+for idx, (key, label) in enumerate(metrics):
+    plt.bar(x + (idx - 2) * width, [results[m][key] for m in MODEL_ORDER], width, label=label,
+            color=metric_colors[idx], alpha=0.9, edgecolor='white', lw=0.6)
+plt.title("Performance comparison on the test partition (N = 49)", fontsize=14, fontweight='bold')
+plt.xticks(x, [display[m] for m in MODEL_ORDER], fontsize=10)
+plt.ylabel("Score", fontsize=11, fontweight='bold')
+plt.ylim(0, 1.12)
+plt.legend(loc='upper right', fontsize=10, ncol=5)
+plt.grid(True, linestyle=':', alpha=0.5, axis='y')
+plt.tight_layout()
+plt.savefig(os.path.join("outputs", "plots", "model_performance_comparison.png"), dpi=300)
+plt.close()
+print(" - outputs/plots/model_performance_comparison.png")
 
-# RIPPER
-rip_acc = metrics_map.get("RIPPER Ruleset", {}).get("Accuracy", np.nan)
-rip_f1 = metrics_map.get("RIPPER Ruleset", {}).get("Macro F1", np.nan)
-rip_sens = metrics_map.get("RIPPER Ruleset", {}).get("Sensitivity (Recall)", np.nan)
-tradeoff_rows.append(["RIPPER Ruleset", "White-Box (Compact Rules)", rip_acc, rip_f1, rip_sens, ripper_rules_count, f"{ripper_mean_literals:.2f}"])
+# 8B. Confusion matrices (all six models)
+fig, axes = plt.subplots(2, 3, figsize=(14, 9.5), dpi=300)
+for ax, m in zip(axes.flatten(), MODEL_ORDER):
+    r = results[m]
+    cm = np.array([[r['TN'], r['FP']], [r['FN'], r['TP']]])
+    ax.matshow(cm, cmap='Blues', alpha=0.6)
+    for (i, j), val in np.ndenumerate(cm):
+        ax.text(j, i, f'{val}', ha='center', va='center', fontsize=16, fontweight='bold')
+    ax.set_title(display[m].replace('\n', ' '), fontsize=12, fontweight='bold', pad=10)
+    ax.set_xticks([0, 1]); ax.set_xticklabels(['Negative', 'Positive'])
+    ax.set_yticks([0, 1]); ax.set_yticklabels(['Negative', 'Positive'])
+    ax.tick_params(axis="both", bottom=True, top=False, labelbottom=True, labeltop=False)
+    ax.set_xlabel('Predicted'); ax.set_ylabel('True')
+plt.suptitle("Confusion matrices on the test partition (N = 49)", fontsize=15, fontweight='bold')
+plt.tight_layout()
+plt.savefig(os.path.join("outputs", "plots", "confusion_matrices.png"), dpi=300)
+plt.close()
+print(" - outputs/plots/confusion_matrices.png")
 
-# Random Forest
-rf_acc = metrics_map.get("Random Forest", {}).get("Accuracy", np.nan)
-rf_f1 = metrics_map.get("Random Forest", {}).get("Macro F1", np.nan)
-rf_sens = metrics_map.get("Random Forest", {}).get("Sensitivity (Recall)", np.nan)
-tradeoff_rows.append(["Random Forest", "Black-Box (Ensemble Bagging)", rf_acc, rf_f1, rf_sens, "N/A (300 Trees)", "N/A"])
-
-# SVM
-svm_acc = metrics_map.get("Support Vector Machine", {}).get("Accuracy", np.nan)
-svm_f1 = metrics_map.get("Support Vector Machine", {}).get("Macro F1", np.nan)
-svm_sens = metrics_map.get("Support Vector Machine", {}).get("Sensitivity (Recall)", np.nan)
-tradeoff_rows.append(["Support Vector Machine", "Black-Box (Kernel Margin)", svm_acc, svm_f1, svm_sens, "N/A (Hilbert Space)", "N/A"])
-
-print("\n" + "="*95)
-print(f"{'Classifier Model':<25} | {'Model Nature':<28} | {'Accuracy':<8} | {'Macro F1':<8} | {'Sensitivity':<11} | {'Rules Count':<15} | {'Mean Literals':<12}")
-print("-" * 120)
+# 8C. Figure 4.6: complexity vs macro F1 (log-scaled complexity axis, real counts)
+point_colors = {'RIPPER': '#e67e22', 'Logistic Regression': '#16a085', 'C4.5': '#2980b9',
+                'Random Forest': '#27ae60', 'SVM': '#8e44ad'}
+plt.figure(figsize=(11, 6.5), dpi=300)
+ax = plt.gca()
+# Labels for C4.5 and RIPPER go below their points (C4.5 shares its x value with
+# Logistic Regression; RIPPER sits just under the Zero-R reference line).
+label_below = {'C4.5', 'RIPPER'}
 for row in tradeoff_rows:
-    if isinstance(row[2], float):
-        acc_str = f"{row[2]:.4f}"
-    else:
-        acc_str = str(row[2])
-    if isinstance(row[3], float):
-        f1_str = f"{row[3]:.4f}"
-    else:
-        f1_str = str(row[3])
-    if isinstance(row[4], float):
-        sens_str = f"{row[4]:.4f}"
-    else:
-        sens_str = str(row[4])
-        
-    print(f"{row[0]:<25} | {row[1]:<28} | {acc_str:<8} | {f1_str:<8} | {sens_str:<11} | {str(row[5]):<15} | {str(row[6]):<12}")
-print("="*95)
+    m = row['Model']
+    plt.scatter(row['Complexity_N'], row['Macro_F1'], color=point_colors[m], s=200, zorder=6,
+                edgecolors='black', lw=0.8)
+    below = m in label_below
+    plt.annotate(f"{row['Complexity']}\n({m}, macro F1 = {row['Macro_F1']:.4f})",
+                 (row['Complexity_N'], row['Macro_F1']), textcoords="offset points",
+                 xytext=(0, -16) if below else (0, 14), va='top' if below else 'bottom',
+                 ha='center', fontsize=8.5, fontweight='bold',
+                 bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=point_colors[m], lw=1.2, alpha=0.9))
+plt.axhline(results['Zero-R']['Macro_F1'], color='grey', linestyle='--', lw=1.2,
+            label=f"Zero-R macro F1 = {results['Zero-R']['Macro_F1']:.4f}")
+ax.set_xscale('log')
+plt.xlabel("Model size (rules / coefficients / leaves / trees / support vectors; log scale)",
+           fontsize=11, fontweight='bold')
+plt.ylabel("Macro F1 (test partition)", fontsize=11, fontweight='bold')
+plt.title("Accuracy-versus-interpretability trade-off (test partition, N = 49)",
+          fontsize=13, fontweight='bold')
+f1s = [r['Macro_F1'] for r in tradeoff_rows] + [results['Zero-R']['Macro_F1']]
+plt.ylim(min(f1s) - 0.05, max(f1s) + 0.08)
+plt.grid(True, linestyle=':', alpha=0.6)
+plt.legend(loc='lower right', fontsize=9)
+plt.tight_layout()
+plt.savefig(os.path.join("outputs", "plots", "interpretability_vs_accuracy.png"), dpi=300)
+plt.close()
+print(" - outputs/plots/interpretability_vs_accuracy.png")
 
-# ------------------------------------------------------------------------------
-# 8. GENERATE ADDITIONAL GRAPHICAL OUTPUTS
-# ------------------------------------------------------------------------------
-print("\n[8] Generating remaining evaluation plots...")
-try:
-    # 8A. Model Performance Comparison Grouped Bar Chart (All 6 Models from Table 4.8)
-    all_models_data = [
-        {
-            'Name': 'Majority-Class\n(Zero-R)',
-            'Accuracy': 0.8163,
-            'Precision': 0.0000,
-            'Sensitivity': 0.0000,
-            'Specificity': 1.0000,
-            'Macro F1': 0.4494
-        },
-        {
-            'Name': 'Logistic\nRegression',
-            'Accuracy': 0.7143,
-            'Precision': 0.2222,
-            'Sensitivity': 0.2222,
-            'Specificity': 0.8250,
-            'Macro F1': 0.5236
-        },
-        {
-            'Name': 'C4.5 Decision\nTree',
-            'Accuracy': 0.5714,
-            'Precision': 0.1667,
-            'Sensitivity': 0.3333,
-            'Specificity': 0.6250,
-            'Macro F1': 0.4632
-        },
-        {
-            'Name': 'RIPPER\nRuleset',
-            'Accuracy': 0.7551,
-            'Precision': 0.0000,
-            'Sensitivity': 0.0000,
-            'Specificity': 0.9250,
-            'Macro F1': 0.4302
-        },
-        {
-            'Name': 'Random\nForest',
-            'Accuracy': 0.7347,
-            'Precision': 0.2500,
-            'Sensitivity': 0.2222,
-            'Specificity': 0.8500,
-            'Macro F1': 0.5374
-        },
-        {
-            'Name': 'Support Vector\nMachine',
-            'Accuracy': 0.7551,
-            'Precision': 0.3333,
-            'Sensitivity': 0.3333,
-            'Specificity': 0.8500,
-            'Macro F1': 0.5917
-        }
-    ]
-
-    models_names = [m['Name'] for m in all_models_data]
-    metrics = ['Accuracy', 'Precision', 'Sensitivity', 'Specificity', 'Macro F1']
-    metric_colors = ['#2b5c8f', '#e67e22', '#27ae60', '#c0392b', '#8e44ad']
-    
-    x = np.arange(len(models_names))
-    width = 0.14
-    
-    plt.figure(figsize=(14, 7.5), dpi=300)
-    for idx, metric in enumerate(metrics):
-        values = [m[metric] for m in all_models_data]
-        offset = x + (idx - 2) * width
-        bars = plt.bar(offset, values, width, label=metric, color=metric_colors[idx], alpha=0.9, edgecolor='white', lw=0.6)
-        
-    plt.title("Multi-Metric Performance Comparison across Evaluated Models\n(Clinical Test Partition, N = 49)", 
-              fontsize=14, fontweight='bold', pad=15)
-    plt.xticks(x, models_names, fontsize=10, fontweight='medium')
-    plt.ylabel("Performance Score", fontsize=11, fontweight='bold')
-    plt.ylim(0, 1.12)
-    plt.legend(loc='upper right', frameon=True, facecolor='white', edgecolor='#e2e2e2', fontsize=10, ncol=5)
-    plt.grid(True, linestyle=':', alpha=0.5, color='#cbcbcb', axis='y')
-    
-    ax = plt.gca()
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#888888')
-    ax.spines['bottom'].set_color('#888888')
-    
-    perf_plot_path = os.path.join("outputs", "plots", "model_performance_comparison.png")
-    plt.tight_layout()
-    plt.savefig(perf_plot_path, dpi=300)
-    plt.close()
-    print(f" - Model performance comparison plot exported to: {perf_plot_path}")
-    
-    # 8B. Confusion Matrix Heatmaps (4 Core Evaluated Models)
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10), dpi=300)
-    axes = axes.flatten()
-    for idx, res in enumerate(results):
-        ax = axes[idx]
-        cm = res['CM']
-        cax = ax.matshow(cm, cmap='Blues', alpha=0.6)
-        for (i, j), val in np.ndenumerate(cm):
-            ax.text(j, i, f'{val}', ha='center', va='center', fontsize=16, fontweight='bold')
-            
-        ax.set_title(res['Name'], fontsize=12, fontweight='bold', pad=10)
-        ax.set_xticks([0, 1])
-        ax.set_xticklabels(['Negative', 'Positive'], fontsize=10)
-        ax.set_yticks([0, 1])
-        ax.set_yticklabels(['Negative', 'Positive'], fontsize=10)
-        ax.tick_params(axis="both", which="both", bottom=True, top=False, labelbottom=True, labeltop=False)
-        ax.set_xlabel('Predicted Label', fontsize=10)
-        ax.set_ylabel('True Label', fontsize=10)
-        
-    plt.suptitle("Confusion Matrix Heatmaps (Clinical Test Partition, N = 49)", fontsize=15, fontweight='bold', y=0.98)
-    plt.tight_layout()
-    cm_plot_path = os.path.join("outputs", "plots", "confusion_matrices.png")
-    plt.savefig(cm_plot_path, dpi=300)
-    plt.close()
-    print(f" - Confusion matrices heatmap plot exported to: {cm_plot_path}")
-    
-    # 8C. Accuracy-vs-Interpretability Scatter Plot (Figure 4.6 with Logistic Regression)
-    frontier_models = [
-        {"name": "RIPPER Ruleset", "complexity": 2, "macro_f1": 0.4302, 
-         "label": "2 Rules\n(RIPPER Ruleset)", "color": "#e67e22", "xytext": (0, -28)},
-        {"name": "Logistic Regression", "complexity": 12, "macro_f1": 0.5236, 
-         "label": "12 Coefficients\n(Logistic Regression)", "color": "#16a085", "xytext": (0, 12)},
-        {"name": "C4.5 Decision Tree", "complexity": 46, "macro_f1": 0.4632, 
-         "label": "46 Leaf Rules\n(C4.5 Tree)", "color": "#2980b9", "xytext": (0, 12)},
-        {"name": "Random Forest", "complexity": 300, "macro_f1": 0.5374, 
-         "label": "300 Trees\n(Random Forest)", "color": "#27ae60", "xytext": (0, 12)},
-        {"name": "Support Vector Machine", "complexity": 350, "macro_f1": 0.5917, 
-         "label": "Hilbert Space\n(SVM RBF)", "color": "#8e44ad", "xytext": (0, 12)}
-    ]
-    
-    plt.figure(figsize=(11, 6.5), dpi=300)
-    ax = plt.gca()
-    
-    # Shaded domain regions
-    ax.axvspan(-20, 100, color='#e8f4f8', alpha=0.5, label='White-Box Domain (Auditable)')
-    ax.axvspan(100, 420, color='#f5eef8', alpha=0.5, label='Black-Box Domain (Ensemble/Kernel)')
-    
-    for m in frontier_models:
-        plt.scatter(m['complexity'], m['macro_f1'], color=m['color'], s=200, zorder=6, edgecolors='black', lw=0.8)
-        plt.annotate(m['label'], (m['complexity'], m['macro_f1']), 
-                     textcoords="offset points", xytext=m['xytext'], ha='center', fontsize=9, fontweight='bold',
-                     bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=m['color'], lw=1.2, alpha=0.9))
-    
-    # Connect frontier trace
-    frontier_x = [m['complexity'] for m in frontier_models]
-    frontier_y = [m['macro_f1'] for m in frontier_models]
-    # Sort for continuous trendline
-    sorted_pts = sorted(zip(frontier_x, frontier_y))
-    plt.plot([p[0] for p in sorted_pts], [p[1] for p in sorted_pts], 
-             linestyle='--', color='#7f8c8d', lw=1.5, alpha=0.7, zorder=4, label='Empirical Complexity-Performance Trajectory')
-                     
-    plt.title("Accuracy-versus-Interpretability Trade-off Frontier\n(Clinical Test Partition, N = 49)", 
-              fontsize=13, fontweight='bold', pad=15)
-    plt.xlabel("Model Complexity Proxy (Rules / Coefficients / Ensemble Size)", fontsize=11, fontweight='bold')
-    plt.ylabel("Macro F1-Score", fontsize=11, fontweight='bold')
-    plt.xlim(-25, 410)
-    plt.ylim(0.38, 0.65)
-    plt.grid(True, linestyle=':', alpha=0.6, color='#cbcbcb')
-    plt.legend(loc='lower right', frameon=True, facecolor='white', edgecolor='#e2e2e2', fontsize=9)
-    
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#888888')
-    ax.spines['bottom'].set_color('#888888')
-    
-    tradeoff_plot_path = os.path.join("outputs", "plots", "interpretability_vs_accuracy.png")
-    plt.tight_layout()
-    plt.savefig(tradeoff_plot_path, dpi=300)
-    plt.close()
-    print(f" - Interpretability vs accuracy trade-off plot exported to: {tradeoff_plot_path}")
-    
-except Exception as e:
-    print(f"Error generating additional graphical outputs: {e}")
-    import traceback
-    traceback.print_exc()
-
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("STAGE 8 CLINICAL TESTING AND PROFILING SUCCESSFULLY COMPLETED")
-print("="*80)
-
+print("=" * 80)

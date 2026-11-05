@@ -2,7 +2,7 @@
 EXECUTION LOG: Stage 0: Data Ingestion & Geopolitical Filtering
 Script: pre_process.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 1.26 seconds
+Execution Duration: 1.41 seconds
 Exit Code: 0
 ================================================================================
 

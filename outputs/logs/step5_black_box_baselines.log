@@ -1,8 +1,8 @@
 ================================================================================
-EXECUTION LOG: Stage 6: Black-Box Benchmark Optimization (RF & SVM)
+EXECUTION LOG: Stage 6: Black-Box Benchmark Tuning (RF & SVM, SMOTE-NC inside CV folds)
 Script: fifth_step.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 40.96 seconds
+Execution Duration: 60.93 seconds
 Exit Code: 0
 ================================================================================
 
@@ -614,6 +614,7 @@ STAGE 7 PIPELINE: HYPERPARAMETER OPTIMIZATION OF BLACK-BOX BASELINES
 
 [1/5] Ingesting resampled train and validation test splits...
 Successfully loaded datasets:
+ - Original Train instances (for tuning): 194
  - Resampled Train instances: 316
  - Stratified Test instances: 49
 
@@ -623,56 +624,73 @@ Successfully loaded datasets:
 --------------------------------------------------------------------------------
 OPTIMIZING BLACK-BOX MODEL 1: RANDOM FOREST ENSEMBLE CLASSIFIER
 --------------------------------------------------------------------------------
-Running 5-fold Stratified GridSearchCV for Random Forest...
+Running 5-fold Stratified GridSearchCV for Random Forest (SMOTE-NC inside each fold)...
 Fitting 5 folds for each of 48 candidates, totalling 240 fits
 
 Random Forest Optimization Complete.
-Best cross-validated parameters: {'classifier__max_depth': 10, 'classifier__min_samples_split': 5, 'classifier__n_estimators': 300}
-Best cross-validated score (Macro F1): 0.8119
+Best cross-validated parameters: {'classifier__max_depth': 5, 'classifier__min_samples_split': 10, 'classifier__n_estimators': 50}
+Best cross-validated score (Macro F1, real-prevalence validation folds): 0.5061
 
 Random Forest Test Set Evaluation:
 Confusion Matrix:
-[[34  6]
- [ 7  2]]
+[[31  9]
+ [ 6  3]]
 
 Classification Report:
               precision    recall  f1-score   support
 
-    Negative       0.83      0.85      0.84        40
-    Positive       0.25      0.22      0.24         9
+    Negative       0.84      0.78      0.81        40
+    Positive       0.25      0.33      0.29         9
 
-    accuracy                           0.73        49
-   macro avg       0.54      0.54      0.54        49
-weighted avg       0.72      0.73      0.73        49
+    accuracy                           0.69        49
+   macro avg       0.54      0.55      0.55        49
+weighted avg       0.73      0.69      0.71        49
 
  - Persistent pipeline successfully saved to: outputs\models\random_forest_pipeline.pkl
 
 --------------------------------------------------------------------------------
 OPTIMIZING BLACK-BOX MODEL 2: SUPPORT VECTOR MACHINE (SVC)
 --------------------------------------------------------------------------------
-Running 5-fold Stratified GridSearchCV for Support Vector Machine...
+Running 5-fold Stratified GridSearchCV for Support Vector Machine (SMOTE-NC inside each fold)...
 Fitting 5 folds for each of 60 candidates, totalling 300 fits
 
 Support Vector Machine Optimization Complete.
-Best cross-validated parameters: {'classifier__C': 100, 'classifier__gamma': 1, 'classifier__kernel': 'rbf'}
-Best cross-validated score (Macro F1): 0.8139
+Best cross-validated parameters: {'classifier__C': 1, 'classifier__gamma': 0.01, 'classifier__kernel': 'rbf'}
+Best cross-validated score (Macro F1, real-prevalence validation folds): 0.5518
 
 Support Vector Machine Test Set Evaluation:
 Confusion Matrix:
-[[34  6]
- [ 6  3]]
+[[26 14]
+ [ 5  4]]
 
 Classification Report:
               precision    recall  f1-score   support
 
-    Negative       0.85      0.85      0.85        40
-    Positive       0.33      0.33      0.33         9
+    Negative       0.84      0.65      0.73        40
+    Positive       0.22      0.44      0.30         9
 
-    accuracy                           0.76        49
-   macro avg       0.59      0.59      0.59        49
-weighted avg       0.76      0.76      0.76        49
+    accuracy                           0.61        49
+   macro avg       0.53      0.55      0.51        49
+weighted avg       0.73      0.61      0.65        49
 
  - Persistent pipeline successfully saved to: outputs\models\svm_pipeline.pkl
+
+ - Selected hyperparameters saved to outputs/models/best_params.json:
+{
+  "random_forest": {
+    "max_depth": 5,
+    "min_samples_split": 10,
+    "n_estimators": 50
+  },
+  "random_forest_cv_macro_f1": 0.5061152452012532,
+  "svm": {
+    "C": 1,
+    "gamma": 0.01,
+    "kernel": "rbf"
+  },
+  "svm_cv_macro_f1": 0.5518389559547446,
+  "tuning_protocol": "GridSearchCV on the 194 original training rows; StratifiedKFold(5, shuffle, random_state=42); SMOTE-NC (k=5) fitted inside each training fold only; scoring=f1_macro; final model refitted on X_train_resampled.csv"
+}
 
 ================================================================================
 STAGE 7 BASELINE CLASSIFIER COMPLETE AND PERSISTED

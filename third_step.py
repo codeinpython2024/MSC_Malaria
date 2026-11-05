@@ -142,10 +142,26 @@ X_train_resampled.to_csv("X_train_resampled.csv", index=False)
 Y_train_resampled.to_csv("Y_train_resampled.csv", index=False)
 X_test.to_csv("X_test.csv", index=False)
 Y_test.to_csv("Y_test.csv", index=False)
+# The original (pre-SMOTE) training rows are also saved so that hyperparameter
+# tuning in fifth_step.py can apply SMOTE-NC inside each CV fold only.
+X_train.to_csv("X_train_original.csv", index=False)
+Y_train.to_csv("Y_train_original.csv", index=False)
+
+# Audit: imbalanced-learn keeps the original rows first, then appends synthetic ones.
+n_orig = len(X_train)
+orig_block_identical = (
+    (X_train_resampled.iloc[:n_orig].astype(int).values == X_train.astype(int).values).all()
+    and (Y_train_resampled.iloc[:n_orig].values == Y_train.values).all()
+)
+n_synth = len(X_train_resampled) - n_orig
+print(f" - Original rows occupy the first {n_orig} rows of the resampled set: {orig_block_identical}")
+print(f" - Synthetic rows appended: {n_synth} (all positive: {(Y_train_resampled.iloc[n_orig:] == 1).all()})")
 
 print("Saved files successfully:")
 print(" - X_train_resampled.csv")
 print(" - Y_train_resampled.csv")
 print(" - X_test.csv")
 print(" - Y_test.csv")
+print(" - X_train_original.csv")
+print(" - Y_train_original.csv")
 print("\nStep 3 and Step 4 Pipeline Stage Complete.")

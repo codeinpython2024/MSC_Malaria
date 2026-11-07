@@ -10,6 +10,7 @@ pr_path = os.path.join("NGPR81DT", "NGPR81FL.DTA")
 print(f"Loading files: {kr_path} and {pr_path}...")
 kr_df = pd.read_stata(kr_path, convert_categoricals=False)  # Child Recode (Baseline)
 pr_df = pd.read_stata(pr_path, convert_categoricals=False)  # Household Member Recode
+print(f"  Children's Recode (KR) records in file: {len(kr_df)}")
 
 # ==============================================================================
 # PHASE 2: SUBSETTING PROTOCOL (DEMOGRAPHIC & RESIDENCY)
@@ -18,13 +19,16 @@ print("Executing demographic and residency subsetting...")
 
 # 1. Biological Survival Filter: Keep only children who are currently alive (b5 == 1)
 kr_cohort = kr_df[kr_df['b5'] == 1].copy()
+print(f"  After b5 == 1 (child alive): {len(kr_cohort)}")
 
 # 2. Household Residency Filter: Keep only children physically living in the surveyed dwelling
 kr_cohort = kr_cohort.dropna(subset=['b16'])
 kr_cohort = kr_cohort[kr_cohort['b16'] > 0]
+print(f"  After b16 > 0 (child listed in household): {len(kr_cohort)}")
 
 # 3. Biological Age Parameter: Restrict to children 6 to 59 months old
 kr_cohort = kr_cohort[(kr_cohort['b19'] >= 6) & (kr_cohort['b19'] <= 59)]
+print(f"  After 6 <= b19 <= 59 (age 6-59 months): {len(kr_cohort)}")
 
 # ==============================================================================
 # PHASE 3: SUBSETTING PROTOCOL (GEOPOLITICAL)
@@ -33,9 +37,11 @@ print("Applying geopolitical spatial constraints...")
 
 # 1. State Filter: Isolate Nasarawa State (v024 == 15 represents Nasarawa in 2021 MIS)
 kr_cohort = kr_cohort[kr_cohort['v024'] == 15]
+print(f"  After v024 == 15 (Nasarawa State): {len(kr_cohort)}")
 
 # 2. Topographical Filter: Isolate Rural communities (v025 == 2)
 kr_cohort = kr_cohort[kr_cohort['v025'] == 2]
+print(f"  After v025 == 2 (rural): {len(kr_cohort)}")
 
 print(f"Total target cohort isolated: {len(kr_cohort)} rural Nasarawa children.")
 
@@ -57,7 +63,7 @@ kr_cohort['hv002'] = kr_cohort['hv002'].astype(int)
 kr_cohort['hvidx'] = kr_cohort['hvidx'].astype(int)
 
 # 2. Extract targeted malaria and vector features simultaneously from the PR dataframe
-pr_cols = ['hv001', 'hv002', 'hvidx', 'hml20', 'hml32']
+pr_cols = ['hv001', 'hv002', 'hvidx', 'hml20', 'hml32', 'hml32a', 'hv103']  # hml32a, hv103: logged checks only
 pr_malaria_vector = pr_df[pr_cols].copy()
 
 pr_malaria_vector['hv001'] = pr_malaria_vector['hv001'].astype(int)
@@ -71,6 +77,9 @@ merged_matrix = pd.merge(
     on=['hv001', 'hv002', 'hvidx'], 
     how='left'
 )
+pr_keys = set(map(tuple, pr_malaria_vector[['hv001', 'hv002', 'hvidx']].values))
+n_unmatched = sum(tuple(k) not in pr_keys for k in kr_cohort[['hv001', 'hv002', 'hvidx']].values)
+print(f"  After merge with PR file: {len(merged_matrix)} records; merge failures: {n_unmatched}")
 
 # ==============================================================================
 # PHASE 5: DATA CLEANSING FOR C4.5 / RIPPER
@@ -80,9 +89,16 @@ print("Cleaning target class and algorithmic predictors...")
 # 1. Clean Target Class (Y) - hml32 (Malaria Microscopy)
 # Retains definitive Negative (0) and Positive (1) test results. Drops untested/indeterminate.
 merged_matrix = merged_matrix[merged_matrix['hml32'].isin([0, 1])]
+print(f"  After hml32 in [0, 1] (definitive microscopy result): {len(merged_matrix)}")
 
 # 2. Clean Predictor (X) - hml20 (Child Slept Under LLIN)
 merged_matrix = merged_matrix[merged_matrix['hml20'].isin([0, 1])]
+print(f"  After hml20 in [0, 1] (valid LLIN record): {len(merged_matrix)}")
+n_pos = int((merged_matrix['hml32'] == 1).sum())
+print(f"  Cohort: {len(merged_matrix)} children ({len(merged_matrix) - n_pos} negative, {n_pos} positive); "
+      f"{merged_matrix[['hv001', 'hv002']].drop_duplicates().shape[0]} households; {merged_matrix['hv001'].nunique()} clusters")
+print(f"  De facto residents (hv103 == 1): {int((merged_matrix['hv103'] == 1).sum())} of {len(merged_matrix)}")
+print(f"  Positives with P. falciparum (hml32a == 1): {int(((merged_matrix['hml32'] == 1) & (merged_matrix['hml32a'] == 1)).sum())} of {n_pos}")
 
 # ==============================================================================
 # PHASE 6: FINAL SDOH FEATURE EXTRACTION

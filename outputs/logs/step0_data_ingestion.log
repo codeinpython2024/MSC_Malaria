@@ -2,16 +2,28 @@
 EXECUTION LOG: Stage 0: Data Ingestion & Geopolitical Filtering
 Script: pre_process.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 1.41 seconds
+Execution Duration: 2.38 seconds
 Exit Code: 0
 ================================================================================
 
 Loading files: NGKR81DT\NGKR81FL.DTA and NGPR81DT\NGPR81FL.DTA...
+  Children's Recode (KR) records in file: 10988
 Executing demographic and residency subsetting...
+  After b5 == 1 (child alive): 10645
+  After b16 > 0 (child listed in household): 10469
+  After 6 <= b19 <= 59 (age 6-59 months): 9510
 Applying geopolitical spatial constraints...
+  After v024 == 15 (Nasarawa State): 330
+  After v025 == 2 (rural): 245
 Total target cohort isolated: 245 rural Nasarawa children.
 Mapping relational bridging keys and executing Left Join...
+  After merge with PR file: 245 records; merge failures: 0
 Cleaning target class and algorithmic predictors...
+  After hml32 in [0, 1] (definitive microscopy result): 243
+  After hml20 in [0, 1] (valid LLIN record): 243
+  Cohort: 243 children (198 negative, 45 positive); 139 households; 9 clusters
+  De facto residents (hv103 == 1): 243 of 243
+  Positives with P. falciparum (hml32a == 1): 43 of 45
 Extracting final SDOH theoretical feature space...
 ==============================================================================
 PIPELINE COMPLETE. Final ML Matrix shape: (243, 17)

@@ -21,10 +21,18 @@ stages = [
 
 os.makedirs("outputs/logs", exist_ok=True)
 
+# Optional: pass script names to run only those stages, e.g.
+#   python generate_execution_logs.py pre_process.py
+selected = sys.argv[1:]
+unknown = [s for s in selected if s not in {script for _, script, _ in stages}]
+if unknown:
+    sys.exit(f"Unknown stage script(s): {unknown}")
+run_stages = [s for s in stages if not selected or s[1] in selected]
+
 print(f"Beginning Master Execution and Log Generation using {python_exe}...")
 start_all = time.time()
 
-for log_path, script_name, desc in stages:
+for log_path, script_name, desc in run_stages:
     print(f"\n---> Running {desc} ({script_name})...")
     t0 = time.time()
     
@@ -59,6 +67,6 @@ for log_path, script_name, desc in stages:
 
 total_elapsed = time.time() - start_all
 print(f"\n================================================================================")
-print(f"ALL 11 STAGES EXECUTED AND LOGGED SUCCESSFULLY in {total_elapsed:.2f}s!")
-print(f"All log files in outputs/logs/ are updated and verified.")
+print(f"{len(run_stages)} OF {len(stages)} STAGES EXECUTED AND LOGGED SUCCESSFULLY in {total_elapsed:.2f}s!")
+print(f"Log files for these stages in outputs/logs/ are updated.")
 print(f"================================================================================")

@@ -1,0 +1,715 @@
+================================================================================
+EXECUTION LOG: Diagnostic: RIPPER Induction Trace (Wittgenstein verbose output)
+Script: ripper_trace.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 0.55 seconds
+Exit Code: 0
+================================================================================
+
+==========================================================================================
+RIPPER INDUCTION TRACE (Wittgenstein 0.3.5, RIPPER(random_state=42), pos_class=1)
+==========================================================================================
+Training data: X_train_resampled.csv, 316 records (158 positive, 158 negative)
+Settings: k=2, prune_size=0.33, dl_allowance=64, n_discretize_bins=10
+Traced fit reproduces the silent fit and the reported rule set: True
+
+Phase A (grow initial rule set): 15 rules grown; stopped by the description-length limit (diff 70.9 bits > 64)
+Phase B (optimisation, k=2): no changes; halted at iteration 1
+Phase C (cover remaining positives): rule list grew to 22 entries (15 distinct; new rules only repeat existing ones); stopped by the description-length limit (diff 67.6 bits > 64)
+Phase D (delete rules that increase total description length): 2 rules kept, 13 distinct rules deleted
+A 'rule error rate > 50%' stop was not applied (Wittgenstein's RIPPER has no such check).
+
+Rules grown in Phase A (K = kept in the final rule set):
+   1. K [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]
+   2.   [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]
+   3. K [v128=21^v129=31^b19=14.0-17.0]
+   4.   [v128=21^b4=2^v106=0^b19=37.0-42.0]
+   5.   [v113=31^v190=3^b4=1^b19=20.0-28.0]
+   6.   [v128=21^v113=21^v190=1]
+   7.   [v113=31^v190=3^v106=0^b4=1^b19=>54.0]
+   8.   [v113=31^v190=3]
+   9.   [v128=21^b4=2^b19=42.0-45.0]
+  10.   [v113=31^v116=31^v190=2]
+  11.   [b4=2^v113=43^v190=1^b19=50.0-54.0]
+  12.   [b19=20.0-28.0^v116=31^v113=43]
+  13.   [v128=96]
+  14.   [v129=12]
+  15.   [v128=21^v113=21^b19=20.0-28.0]
+
+Final rule set: [[v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0] V [v128=21^v129=31^b19=14.0-17.0]]
+
+==========================================================================================
+FULL WITTGENSTEIN TRACE (verbosity=3)
+==========================================================================================
+b19: fit 53 unique vals into 10 bins
+growing ruleset...
+initial model: []
+
+pos_growset 105 pos_pruneset 53
+neg_growset 105 neg_pruneset 53
+grew rule: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0^v190=2]
+pruned rule: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]
+updated ruleset: [[v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]]
+
+rule dl: 15
+updated theory dl: 15
+exceptions: 268
+total dl: 283
+mdl 283 (diff 0 <= 64)
+examples remaining: 106 pos, 154 neg
+
+pos_growset 71 pos_pruneset 35
+neg_growset 103 neg_pruneset 51
+grew rule: [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]
+pruned rule unchanged
+updated ruleset: [[v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0] V [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]]
+
+rule dl: 13.2
+updated theory dl: 28.2
+exceptions: 262
+total dl: 290
+mdl 283 (diff 7.2 <= 64)
+examples remaining: 101 pos, 154 neg
+
+pos_growset 67 pos_pruneset 34
+neg_growset 103 neg_pruneset 51
+grew rule: [v128=21^v129=31^b19=14.0-17.0^b4=1]
+pruned rule: [v128=21^v129=31^b19=14.0-17.0]
+updated ruleset: ...[[v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0] V [v128=21^v129=31^b19=14.0-17.0]]
+
+rule dl: 9.2
+updated theory dl: 37.4
+exceptions: 248
+total dl: 286
+mdl 283 (diff 3 <= 64)
+examples remaining: 86 pos, 152 neg
+
+pos_growset 57 pos_pruneset 29
+neg_growset 101 neg_pruneset 51
+grew rule: [v128=21^b4=2^v106=0^b19=37.0-42.0]
+pruned rule unchanged
+updated ruleset: ...[[v128=21^v129=31^b19=14.0-17.0] V [v128=21^b4=2^v106=0^b19=37.0-42.0]]
+
+rule dl: 11.3
+updated theory dl: 48.7
+exceptions: 237
+total dl: 286
+mdl 283 (diff 3.2 <= 64)
+examples remaining: 78 pos, 152 neg
+
+pos_growset 52 pos_pruneset 26
+neg_growset 101 neg_pruneset 51
+grew rule: [v113=31^v190=3^b4=1^b19=20.0-28.0]
+pruned rule unchanged
+updated ruleset: ...[[v128=21^b4=2^v106=0^b19=37.0-42.0] V [v113=31^v190=3^b4=1^b19=20.0-28.0]]
+
+rule dl: 11.3
+updated theory dl: 60.1
+exceptions: 227
+total dl: 287
+mdl 283 (diff 4 <= 64)
+examples remaining: 71 pos, 152 neg
+
+pos_growset 47 pos_pruneset 24
+neg_growset 101 neg_pruneset 51
+grew rule: [v128=21^v113=21^v190=1]
+pruned rule unchanged
+updated ruleset: ...[[v113=31^v190=3^b4=1^b19=20.0-28.0] V [v128=21^v113=21^v190=1]]
+
+rule dl: 9.2
+updated theory dl: 69.3
+exceptions: 222
+total dl: 291
+mdl 283 (diff 8.3 <= 64)
+examples remaining: 62 pos, 149 neg
+
+pos_growset 41 pos_pruneset 21
+neg_growset 99 neg_pruneset 50
+grew rule: [v113=31^v190=3^v106=0^b4=1^b19=>54.0]
+pruned rule unchanged
+updated ruleset: ...[[v128=21^v113=21^v190=1] V [v113=31^v190=3^v106=0^b4=1^b19=>54.0]]
+
+rule dl: 13.2
+updated theory dl: 82.5
+exceptions: 213
+total dl: 296
+mdl 283 (diff 13.2 <= 64)
+examples remaining: 57 pos, 149 neg
+
+pos_growset 38 pos_pruneset 19
+neg_growset 99 neg_pruneset 50
+grew rule: [v113=31^v190=3^b19=<14.0]
+pruned rule: [v113=31^v190=3]
+updated ruleset: ...[[v113=31^v190=3^v106=0^b4=1^b19=>54.0] V [v113=31^v190=3]]
+
+rule dl: 6.7
+updated theory dl: 89.2
+exceptions: 224
+total dl: 313
+mdl 283 (diff 30.3 <= 64)
+examples remaining: 38 pos, 131 neg
+
+pos_growset 25 pos_pruneset 13
+neg_growset 87 neg_pruneset 44
+grew rule: [v128=21^b4=2^b19=42.0-45.0]
+pruned rule unchanged
+updated ruleset: ...[[v113=31^v190=3] V [v128=21^b4=2^b19=42.0-45.0]]
+
+rule dl: 9.2
+updated theory dl: 98.4
+exceptions: 218
+total dl: 317
+mdl 283 (diff 34 <= 64)
+examples remaining: 33 pos, 129 neg
+
+pos_growset 22 pos_pruneset 11
+neg_growset 86 neg_pruneset 43
+grew rule: [v113=31^v116=31^v190=2^v127=11]
+pruned rule: [v113=31^v116=31^v190=2]
+updated ruleset: ...[[v128=21^b4=2^b19=42.0-45.0] V [v113=31^v116=31^v190=2]]
+
+rule dl: 9.2
+updated theory dl: 108
+exceptions: 217
+total dl: 325
+mdl 283 (diff 42.3 <= 64)
+examples remaining: 24 pos, 120 neg
+
+pos_growset 16 pos_pruneset 8
+neg_growset 80 neg_pruneset 40
+grew rule: [b4=2^v113=43^v190=1^b19=50.0-54.0]
+pruned rule unchanged
+updated ruleset: ...[[v113=31^v116=31^v190=2] V [b4=2^v113=43^v190=1^b19=50.0-54.0]]
+
+rule dl: 11.3
+updated theory dl: 119
+exceptions: 213
+total dl: 332
+mdl 283 (diff 49.1 <= 64)
+examples remaining: 22 pos, 120 neg
+
+pos_growset 14 pos_pruneset 8
+neg_growset 80 neg_pruneset 40
+grew rule: [b19=20.0-28.0^v116=31^v113=43]
+pruned rule unchanged
+updated ruleset: ...[[b4=2^v113=43^v190=1^b19=50.0-54.0] V [b19=20.0-28.0^v116=31^v113=43]]
+
+rule dl: 9.2
+updated theory dl: 128
+exceptions: 210
+total dl: 338
+mdl 283 (diff 55 <= 64)
+examples remaining: 19 pos, 118 neg
+
+pos_growset 12 pos_pruneset 7
+neg_growset 79 neg_pruneset 39
+grew rule: [v128=96^b19=28.0-37.0]
+pruned rule: [v128=96]
+updated ruleset: ...[[b19=20.0-28.0^v116=31^v113=43] V [v128=96]]
+
+rule dl: 3.6
+updated theory dl: 132
+exceptions: 207
+total dl: 338
+mdl 283 (diff 55.5 <= 64)
+examples remaining: 17 pos, 117 neg
+
+pos_growset 11 pos_pruneset 6
+neg_growset 78 neg_pruneset 39
+grew rule: [v129=12^b19=37.0-42.0]
+pruned rule: [v129=12]
+updated ruleset: ...[[v128=96] V [v129=12]]
+
+rule dl: 3.6
+updated theory dl: 135
+exceptions: 209
+total dl: 344
+mdl 283 (diff 61.5 <= 64)
+examples remaining: 15 pos, 113 neg
+
+pos_growset 10 pos_pruneset 5
+neg_growset 75 neg_pruneset 38
+grew rule: [v128=21^v113=21^b19=20.0-28.0]
+pruned rule unchanged
+updated ruleset: ...[[v129=12] V [v128=21^v113=21^b19=20.0-28.0]]
+
+rule dl: 9.2
+updated theory dl: 145
+exceptions: 209
+total dl: 354
+mdl 283 dl-halt: diff 70.9 exceeds allowance (64)
+examples remaining: 13 pos, 110 neg
+
+
+GREW INITIAL RULESET:
+[[v113=31 ^ v127=34 ^ v116=31 ^ b4=2 ^ v129=31 ^ hml20=0] V
+[v128=21 ^ v129=31 ^ v190=1 ^ b4=2 ^ b19=45.0-50.0] V
+[v128=21 ^ v129=31 ^ b19=14.0-17.0] V
+[v128=21 ^ b4=2 ^ v106=0 ^ b19=37.0-42.0] V
+[v113=31 ^ v190=3 ^ b4=1 ^ b19=20.0-28.0] V
+[v128=21 ^ v113=21 ^ v190=1] V
+[v113=31 ^ v190=3 ^ v106=0 ^ b4=1 ^ b19=>54.0] V
+[v113=31 ^ v190=3] V
+[v128=21 ^ b4=2 ^ b19=42.0-45.0] V
+[v113=31 ^ v116=31 ^ v190=2] V
+[b4=2 ^ v113=43 ^ v190=1 ^ b19=50.0-54.0] V
+[b19=20.0-28.0 ^ v116=31 ^ v113=43] V
+[v128=96] V
+[v129=12] V
+[v128=21 ^ v113=21 ^ b19=20.0-28.0]]
+
+optimization run 1 of 2
+optimizing ruleset...
+
+original ruleset potential dl: 279
+
+grew rule: [v113=31^v116=31^v129=31^v190=2^b19=50.0-54.0]
+grew replacement [v113=31^v116=31^v129=31^v190=2^b19=50.0-54.0]
+pruned replacement is [v113=31^v116=31^v129=31]
+creating revision for 0 of 15: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]
+grew rule: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0^b19=50.0-54.0]
+grew revision [v113=31^v116=31^v129=31^v190=2^b19=50.0-54.0]
+pruned revision is [v113=31^v116=31^v129=31]
+
+calculate potential dl for ds with replacement [v113=31^v116=31^v129=31]
+calculate potential dl for ds with revision [v113=31^v127=34]
+
+rule 1 of 15
+original: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]) | 279 bits
+replacement: [v113=31^v116=31^v129=31] | 352 bits
+revision: [v113=31^v127=34] | 364 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 106 pos, 154 neg
+
+grew rule: [v116=31^v113=31^v129=31^v127=34^hml20=0^b19=>54.0]
+grew replacement [v116=31^v113=31^v129=31^v127=34^hml20=0^b19=>54.0]
+pruned replacement is [v116=31^v113=31^v129=31]
+creating revision for 1 of 15: [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]
+grew rule: [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]
+grew revision [v116=31^v113=31^v129=31^v127=34^hml20=0^b19=>54.0]
+pruned revision is [v116=31^v113=31^v129=31]
+
+calculate potential dl for ds with replacement [v116=31^v113=31^v129=31]
+calculate potential dl for ds with revision [v128=21^v129=31]
+
+rule 2 of 15
+original: [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]) | 279 bits
+replacement: [v116=31^v113=31^v129=31] | 364 bits
+revision: [v128=21^v129=31] | 358 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 101 pos, 154 neg
+
+grew rule: [v113=31^v129=31^v106=0^v190=3^b4=1^v127=34^v116=22]
+grew replacement [v113=31^v129=31^v106=0^v190=3^b4=1^v127=34^v116=22]
+pruned replacement is [v113=31^v129=31^v106=0^v190=3^b4=1]
+creating revision for 2 of 15: [v128=21^v129=31^b19=14.0-17.0]
+grew rule: [v128=21^v129=31^b19=14.0-17.0^v113=31]
+grew revision [v113=31^v129=31^v106=0^v190=3^b4=1^v127=34^v116=22]
+pruned revision is [v113=31^v129=31^v106=0^v190=3^b4=1]
+
+calculate potential dl for ds with replacement [v113=31^v129=31^v106=0^v190=3^b4=1]
+calculate potential dl for ds with revision [v128=21^v129=31]
+
+rule 3 of 15
+original: [v128=21^v129=31^b19=14.0-17.0]) | 279 bits
+replacement: [v113=31^v129=31^v106=0^v190=3^b4=1] | 372 bits
+revision: [v128=21^v129=31] | 362 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 86 pos, 152 neg
+
+grew rule: [v106=0^v128=21^b4=2^b19=37.0-42.0]
+grew replacement [v106=0^v128=21^b4=2^b19=37.0-42.0]
+pruned replacement is [v106=0^v128=21^b4=2]
+creating revision for 3 of 15: [v128=21^b4=2^v106=0^b19=37.0-42.0]
+grew rule: [v128=21^b4=2^v106=0^b19=37.0-42.0]
+grew revision [v106=0^v128=21^b4=2^b19=37.0-42.0]
+pruned revision is [v106=0^v128=21^b4=2]
+
+calculate potential dl for ds with replacement [v106=0^v128=21^b4=2]
+calculate potential dl for ds with revision [v128=21^b4=2]
+
+rule 4 of 15
+original: [v128=21^b4=2^v106=0^b19=37.0-42.0]) | 279 bits
+replacement: [v106=0^v128=21^b4=2] | 359 bits
+revision: [v128=21^b4=2] | 360 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 78 pos, 152 neg
+
+grew rule: [v113=31^b4=1^v190=3^b19=20.0-28.0]
+grew replacement [v113=31^b4=1^v190=3^b19=20.0-28.0]
+pruned replacement is [v113=31^b4=1^v190=3]
+creating revision for 4 of 15: [v113=31^v190=3^b4=1^b19=20.0-28.0]
+grew rule: [v113=31^v190=3^b4=1^b19=20.0-28.0]
+grew revision [v113=31^b4=1^v190=3^b19=20.0-28.0]
+pruned revision is [v113=31^b4=1^v190=3]
+
+calculate potential dl for ds with replacement [v113=31^b4=1^v190=3]
+calculate potential dl for ds with revision [v113=31^v190=3]
+
+rule 5 of 15
+original: [v113=31^v190=3^b4=1^b19=20.0-28.0]) | 279 bits
+replacement: [v113=31^b4=1^v190=3] | 351 bits
+revision: [v113=31^v190=3] | 349 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 71 pos, 152 neg
+
+grew rule: [v128=21^v106=0^b4=2^b19=42.0-45.0^v190=1]
+grew replacement [v128=21^v106=0^b4=2^b19=42.0-45.0^v190=1]
+pruned replacement is [v128=21^v106=0^b4=2]
+creating revision for 5 of 15: [v128=21^v113=21^v190=1]
+grew rule: [v128=21^v113=21^v190=1^b4=2]
+grew revision [v128=21^v106=0^b4=2^b19=42.0-45.0^v190=1]
+pruned revision is [v128=21^v106=0^b4=2]
+
+calculate potential dl for ds with replacement [v128=21^v106=0^b4=2]
+calculate potential dl for ds with revision [v128=21^v113=21^v190=1^b4=2]
+
+rule 6 of 15
+original: [v128=21^v113=21^v190=1]) | 279 bits
+replacement: [v128=21^v106=0^b4=2] | 361 bits
+revision: [v128=21^v113=21^v190=1^b4=2] | 355 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 62 pos, 149 neg
+
+grew rule: [v113=31^v190=3^b4=1^b19=>54.0]
+grew replacement [v113=31^v190=3^b4=1^b19=>54.0]
+pruned replacement is [v113=31^v190=3^b4=1]
+creating revision for 6 of 15: [v113=31^v190=3^v106=0^b4=1^b19=>54.0]
+grew rule: [v113=31^v190=3^v106=0^b4=1^b19=>54.0]
+grew revision [v113=31^v190=3^b4=1^b19=>54.0]
+pruned revision is [v113=31^v190=3^b4=1]
+
+calculate potential dl for ds with replacement [v113=31^v190=3^b4=1]
+calculate potential dl for ds with revision [v113=31^v190=3^v106=0]
+
+rule 7 of 15
+original: [v113=31^v190=3^v106=0^b4=1^b19=>54.0]) | 279 bits
+replacement: [v113=31^v190=3^b4=1] | 350 bits
+revision: [v113=31^v190=3^v106=0] | 350 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 57 pos, 149 neg
+
+grew rule: [v113=31^v190=3^v106=0^b4=1^v127=34^b19=17.0-20.0]
+grew replacement [v113=31^v190=3^v106=0^b4=1^v127=34^b19=17.0-20.0]
+pruned replacement is [v113=31^v190=3^v106=0^b4=1]
+creating revision for 7 of 15: [v113=31^v190=3]
+grew rule: [v113=31^v190=3^v106=0^b4=1^v127=34^b19=17.0-20.0]
+grew revision [v113=31^v190=3^v106=0^b4=1^v127=34^b19=17.0-20.0]
+pruned revision is [v113=31^v190=3^v106=0^b4=1]
+
+calculate potential dl for ds with replacement [v113=31^v190=3^v106=0^b4=1]
+calculate potential dl for ds with revision [v113=31^v190=3^v106=0^b4=1]
+
+rule 8 of 15
+original: [v113=31^v190=3]) | 279 bits
+replacement: [v113=31^v190=3^v106=0^b4=1] | 347 bits
+revision: [v113=31^v190=3^v106=0^b4=1] | 347 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 38 pos, 131 neg
+
+grew rule: [v128=21^b4=2^b19=42.0-45.0]
+grew replacement [v128=21^b4=2^b19=42.0-45.0]
+pruned replacement is [v128=21^b4=2^b19=42.0-45.0]
+creating revision for 8 of 15: [v128=21^b4=2^b19=42.0-45.0]
+grew rule: [v128=21^b4=2^b19=42.0-45.0]
+grew revision [v128=21^b4=2^b19=42.0-45.0]
+pruned revision is [v128=21^b4=2^b19=42.0-45.0]
+
+calculate potential dl for ds with replacement [v128=21^b4=2^b19=42.0-45.0]
+calculate potential dl for ds with revision [v128=21^b4=2^b19=42.0-45.0]
+
+rule 9 of 15
+original: [v128=21^b4=2^b19=42.0-45.0]) | 279 bits
+replacement: unchanged | 279 bits
+revision: unchanged | 279 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 33 pos, 129 neg
+
+grew rule: [v190=2^b19=17.0-20.0^v113=31]
+grew replacement [v190=2^b19=17.0-20.0^v113=31]
+pruned replacement is [v190=2^b19=17.0-20.0^v113=31]
+creating revision for 9 of 15: [v113=31^v116=31^v190=2]
+grew rule: [v113=31^v116=31^v190=2^v158=0^hml20=0^b19=<14.0]
+grew revision [v190=2^b19=17.0-20.0^v113=31]
+pruned revision is [v190=2^b19=17.0-20.0^v113=31]
+
+calculate potential dl for ds with replacement [v190=2^b19=17.0-20.0^v113=31]
+calculate potential dl for ds with revision [v113=31^v116=31^v190=2^v158=0^hml20=0]
+
+rule 10 of 15
+original: [v113=31^v116=31^v190=2]) | 279 bits
+replacement: [v190=2^b19=17.0-20.0^v113=31] | 352 bits
+revision: [v113=31^v116=31^v190=2^v158=0^hml20=0] | 351 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 24 pos, 120 neg
+
+grew rule: [v116=31^v128=21^v129=31^b19=28.0-37.0]
+grew replacement [v116=31^v128=21^v129=31^b19=28.0-37.0]
+pruned replacement is [v116=31^v128=21^v129=31^b19=28.0-37.0]
+creating revision for 10 of 15: [b4=2^v113=43^v190=1^b19=50.0-54.0]
+grew rule: [b4=2^v113=43^v190=1^b19=50.0-54.0]
+grew revision [v116=31^v128=21^v129=31^b19=28.0-37.0]
+pruned revision is [v116=31^v128=21^v129=31^b19=28.0-37.0]
+
+calculate potential dl for ds with replacement [v116=31^v128=21^v129=31^b19=28.0-37.0]
+calculate potential dl for ds with revision [b4=2^v113=43^v190=1^b19=50.0-54.0]
+
+rule 11 of 15
+original: [b4=2^v113=43^v190=1^b19=50.0-54.0]) | 279 bits
+replacement: [v116=31^v128=21^v129=31^b19=28.0-37.0] | 358 bits
+revision: unchanged | 279 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 22 pos, 120 neg
+
+grew rule: [v128=96^b19=28.0-37.0]
+grew replacement [v128=96^b19=28.0-37.0]
+pruned replacement is [v128=96]
+creating revision for 11 of 15: [b19=20.0-28.0^v116=31^v113=43]
+grew rule: [b19=20.0-28.0^v116=31^v113=43^b4=1]
+grew revision [v128=96^b19=28.0-37.0]
+pruned revision is [v128=96]
+
+calculate potential dl for ds with replacement [v128=96]
+calculate potential dl for ds with revision [b19=20.0-28.0^v116=31]
+
+rule 12 of 15
+original: [b19=20.0-28.0^v116=31^v113=43]) | 279 bits
+replacement: [v128=96] | 352 bits
+revision: [b19=20.0-28.0^v116=31] | 353 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 19 pos, 118 neg
+
+grew rule: [v129=12^b19=37.0-42.0]
+grew replacement [v129=12^b19=37.0-42.0]
+pruned replacement is [v129=12^b19=37.0-42.0]
+creating revision for 12 of 15: [v128=96]
+grew rule: [v128=96^b19=>54.0]
+grew revision [v129=12^b19=37.0-42.0]
+pruned revision is [v129=12^b19=37.0-42.0]
+
+calculate potential dl for ds with replacement [v129=12^b19=37.0-42.0]
+calculate potential dl for ds with revision [v128=96]
+
+rule 13 of 15
+original: [v128=96]) | 279 bits
+replacement: [v129=12^b19=37.0-42.0] | 360 bits
+revision: unchanged | 279 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 17 pos, 117 neg
+
+grew rule: [v113=21^v106=2^b19=14.0-17.0]
+grew replacement [v113=21^v106=2^b19=14.0-17.0]
+pruned replacement is [v113=21^v106=2^b19=14.0-17.0]
+creating revision for 13 of 15: [v129=12]
+grew rule: [v129=12^b19=45.0-50.0]
+grew revision [v113=21^v106=2^b19=14.0-17.0]
+pruned revision is [v113=21^v106=2^b19=14.0-17.0]
+
+calculate potential dl for ds with replacement [v113=21^v106=2^b19=14.0-17.0]
+calculate potential dl for ds with revision [v129=12^b19=45.0-50.0]
+
+rule 14 of 15
+original: [v129=12]) | 279 bits
+replacement: [v113=21^v106=2^b19=14.0-17.0] | 354 bits
+revision: [v129=12^b19=45.0-50.0] | 352 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 15 pos, 113 neg
+
+grew rule: [v128=21^v113=21^v158=0^b19=20.0-28.0]
+grew replacement [v128=21^v113=21^v158=0^b19=20.0-28.0]
+pruned replacement is [v128=21^v113=21^v158=0^b19=20.0-28.0]
+creating revision for 14 of 15: [v128=21^v113=21^b19=20.0-28.0]
+grew rule: [v128=21^v113=21^b19=20.0-28.0^v158=0]
+grew revision [v128=21^v113=21^v158=0^b19=20.0-28.0]
+pruned revision is [v128=21^v113=21^v158=0^b19=20.0-28.0]
+
+calculate potential dl for ds with replacement [v128=21^v113=21^v158=0^b19=20.0-28.0]
+calculate potential dl for ds with revision [v128=21^v113=21^b19=20.0-28.0]
+
+rule 15 of 15
+original: [v128=21^v113=21^b19=20.0-28.0]) | 279 bits
+replacement: [v128=21^v113=21^v158=0^b19=20.0-28.0] | 354 bits
+revision: unchanged | 279 bits
+*best: unchanged | 279 bits
+best already included in optimization -- retaining original
+
+examples remaining: 13 pos, 110 neg
+
+
+OPTIMIZED RULESET:
+iteration 1 of 2
+ modified rules []
+[[v113=31 ^ v127=34 ^ v116=31 ^ b4=2 ^ v129=31 ^ hml20=0] V
+[v128=21 ^ v129=31 ^ v190=1 ^ b4=2 ^ b19=45.0-50.0] V
+[v128=21 ^ v129=31 ^ b19=14.0-17.0] V
+[v128=21 ^ b4=2 ^ v106=0 ^ b19=37.0-42.0] V
+[v113=31 ^ v190=3 ^ b4=1 ^ b19=20.0-28.0] V
+[v128=21 ^ v113=21 ^ v190=1] V
+[v113=31 ^ v190=3 ^ v106=0 ^ b4=1 ^ b19=>54.0] V
+[v113=31 ^ v190=3] V
+[v128=21 ^ b4=2 ^ b19=42.0-45.0] V
+[v113=31 ^ v116=31 ^ v190=2] V
+[b4=2 ^ v113=43 ^ v190=1 ^ b19=50.0-54.0] V
+[b19=20.0-28.0 ^ v116=31 ^ v113=43] V
+[v128=96] V
+[v129=12] V
+[v128=21 ^ v113=21 ^ b19=20.0-28.0]]
+
+No changes were made. Halting optimization at iteration k=1.
+158 pos left. Growing final rules...
+growing ruleset...
+initial model: [[v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0] V [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0] V [v128=21^v129=31^b19=14.0-17.0] V [v128=21^b4=2^v106=0^b19=37.0-42.0] V [v113=31^v190=3^b4=1^b19=20.0-28.0] V [v128=21^v113=21^v190=1] V [v113=31^v190=3^v106=0^b4=1^b19=>54.0] V [v113=31^v190=3] V [v128=21^b4=2^b19=42.0-45.0] V [v113=31^v116=31^v190=2] V [b4=2^v113=43^v190=1^b19=50.0-54.0] V [b19=20.0-28.0^v116=31^v113=43] V [v128=96] V [v129=12] V [v128=21^v113=21^b19=20.0-28.0]]
+
+pos_growset 105 pos_pruneset 53
+neg_growset 105 neg_pruneset 53
+grew rule: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0^v190=2]
+pruned rule: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]
+updated ruleset: ...[[v128=21^v113=21^b19=20.0-28.0] V [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]]
+
+rule dl: 15
+updated theory dl: 15
+exceptions: 209
+total dl: 224
+mdl 224 (diff 0 <= 64)
+examples remaining: 106 pos, 154 neg
+
+pos_growset 71 pos_pruneset 35
+neg_growset 103 neg_pruneset 51
+grew rule: [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]
+pruned rule unchanged
+updated ruleset: ...[[v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0] V [v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0]]
+
+rule dl: 13.2
+updated theory dl: 28.2
+exceptions: 209
+total dl: 237
+mdl 224 (diff 13.2 <= 64)
+examples remaining: 101 pos, 154 neg
+
+pos_growset 67 pos_pruneset 34
+neg_growset 103 neg_pruneset 51
+grew rule: [v128=21^v129=31^b19=14.0-17.0^b4=1]
+pruned rule: [v128=21^v129=31^b19=14.0-17.0]
+updated ruleset: ...[[v128=21^v129=31^v190=1^b4=2^b19=45.0-50.0] V [v128=21^v129=31^b19=14.0-17.0]]
+
+rule dl: 9.2
+updated theory dl: 37.4
+exceptions: 209
+total dl: 246
+mdl 224 (diff 22.4 <= 64)
+examples remaining: 86 pos, 152 neg
+
+pos_growset 57 pos_pruneset 29
+neg_growset 101 neg_pruneset 51
+grew rule: [v128=21^b4=2^v106=0^b19=37.0-42.0]
+pruned rule unchanged
+updated ruleset: ...[[v128=21^v129=31^b19=14.0-17.0] V [v128=21^b4=2^v106=0^b19=37.0-42.0]]
+
+rule dl: 11.3
+updated theory dl: 48.7
+exceptions: 209
+total dl: 258
+mdl 224 (diff 33.8 <= 64)
+examples remaining: 78 pos, 152 neg
+
+pos_growset 52 pos_pruneset 26
+neg_growset 101 neg_pruneset 51
+grew rule: [v113=31^v190=3^b4=1^b19=20.0-28.0]
+pruned rule unchanged
+updated ruleset: ...[[v128=21^b4=2^v106=0^b19=37.0-42.0] V [v113=31^v190=3^b4=1^b19=20.0-28.0]]
+
+rule dl: 11.3
+updated theory dl: 60.1
+exceptions: 209
+total dl: 269
+mdl 224 (diff 45.1 <= 64)
+examples remaining: 71 pos, 152 neg
+
+pos_growset 47 pos_pruneset 24
+neg_growset 101 neg_pruneset 51
+grew rule: [v128=21^v113=21^v190=1]
+pruned rule unchanged
+updated ruleset: ...[[v113=31^v190=3^b4=1^b19=20.0-28.0] V [v128=21^v113=21^v190=1]]
+
+rule dl: 9.2
+updated theory dl: 69.3
+exceptions: 209
+total dl: 278
+mdl 224 (diff 54.3 <= 64)
+examples remaining: 62 pos, 149 neg
+
+pos_growset 41 pos_pruneset 21
+neg_growset 99 neg_pruneset 50
+grew rule: [v113=31^v190=3^v106=0^b4=1^b19=>54.0]
+pruned rule unchanged
+updated ruleset: ...[[v128=21^v113=21^v190=1] V [v113=31^v190=3^v106=0^b4=1^b19=>54.0]]
+
+rule dl: 13.2
+updated theory dl: 82.5
+exceptions: 209
+total dl: 292
+mdl 224 dl-halt: diff 67.6 exceeds allowance (64)
+examples remaining: 57 pos, 149 neg
+
+GREW FINAL RULES
+[[v113=31 ^ v127=34 ^ v116=31 ^ b4=2 ^ v129=31 ^ hml20=0] V
+[v128=21 ^ v129=31 ^ v190=1 ^ b4=2 ^ b19=45.0-50.0] V
+[v128=21 ^ v129=31 ^ b19=14.0-17.0] V
+[v128=21 ^ b4=2 ^ v106=0 ^ b19=37.0-42.0] V
+[v113=31 ^ v190=3 ^ b4=1 ^ b19=20.0-28.0] V
+[v128=21 ^ v113=21 ^ v190=1] V
+[v113=31 ^ v190=3 ^ v106=0 ^ b4=1 ^ b19=>54.0] V
+[v113=31 ^ v190=3] V
+[v128=21 ^ b4=2 ^ b19=42.0-45.0] V
+[v113=31 ^ v116=31 ^ v190=2] V
+[b4=2 ^ v113=43 ^ v190=1 ^ b19=50.0-54.0] V
+[b19=20.0-28.0 ^ v116=31 ^ v113=43] V
+[v128=96] V
+[v129=12] V
+[v128=21 ^ v113=21 ^ b19=20.0-28.0] V
+[v113=31 ^ v127=34 ^ v116=31 ^ b4=2 ^ v129=31 ^ hml20=0] V
+[v128=21 ^ v129=31 ^ v190=1 ^ b4=2 ^ b19=45.0-50.0] V
+[v128=21 ^ v129=31 ^ b19=14.0-17.0] V
+[v128=21 ^ b4=2 ^ v106=0 ^ b19=37.0-42.0] V
+[v113=31 ^ v190=3 ^ b4=1 ^ b19=20.0-28.0] V
+[v128=21 ^ v113=21 ^ v190=1] V
+[v113=31 ^ v190=3 ^ v106=0 ^ b4=1 ^ b19=>54.0]]
+
+Optimizing dl...
+FINAL RULESET:
+[[v113=31 ^ v127=34 ^ v116=31 ^ b4=2 ^ v129=31 ^ hml20=0] V
+[v128=21 ^ v129=31 ^ b19=14.0-17.0]]
+
+rule 0 [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0]
+n_samples: 316 tp: 52 fp: 4 tpr: 0.9285714285714286 fpr: 0.07142857142857142 class_ns: (4, 52) class_freqs: (0.07142857142857142, 0.9285714285714286) smoothed_class_freqs: [0.08620689655172414, 0.9137931034482759]
+rule 1 [v128=21^v129=31^b19=14.0-17.0]
+n_samples: 316 tp: 15 fp: 2 tpr: 0.8823529411764706 fpr: 0.11764705882352941 class_ns: (2, 15) class_freqs: (0.11764705882352941, 0.8823529411764706) smoothed_class_freqs: [0.15789473684210525, 0.8421052631578947]
+tn: 152 fn: 91 tnr: 0.6255144032921811 fnr: 0.37448559670781895 ruleset_uncovered_class_ns: (152, 91) ruleset_uncovered_class_freqs (0.6255144032921811, 0.37448559670781895) smoothed_uncovered_class_freqs_ [0.6244897959183674, 0.37551020408163266]

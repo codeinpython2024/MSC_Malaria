@@ -2,7 +2,7 @@
 EXECUTION LOG: Stage 0: Data Ingestion & Geopolitical Filtering
 Script: pre_process.py
 Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
-Execution Duration: 2.38 seconds
+Execution Duration: 1.81 seconds
 Exit Code: 0
 ================================================================================
 
@@ -22,6 +22,7 @@ Cleaning target class and algorithmic predictors...
   After hml32 in [0, 1] (definitive microscopy result): 243
   After hml20 in [0, 1] (valid LLIN record): 243
   Cohort: 243 children (198 negative, 45 positive); 139 households; 9 clusters
+  Duplicate child records (hv001, hv002, hvidx): 0
   De facto residents (hv103 == 1): 243 of 243
   Positives with P. falciparum (hml32a == 1): 43 of 45
 Extracting final SDOH theoretical feature space...

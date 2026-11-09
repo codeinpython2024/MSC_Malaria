@@ -97,6 +97,7 @@ print(f"  After hml20 in [0, 1] (valid LLIN record): {len(merged_matrix)}")
 n_pos = int((merged_matrix['hml32'] == 1).sum())
 print(f"  Cohort: {len(merged_matrix)} children ({len(merged_matrix) - n_pos} negative, {n_pos} positive); "
       f"{merged_matrix[['hv001', 'hv002']].drop_duplicates().shape[0]} households; {merged_matrix['hv001'].nunique()} clusters")
+print(f"  Duplicate child records (hv001, hv002, hvidx): {int(merged_matrix.duplicated(['hv001', 'hv002', 'hvidx']).sum())}")
 print(f"  De facto residents (hv103 == 1): {int((merged_matrix['hv103'] == 1).sum())} of {len(merged_matrix)}")
 print(f"  Positives with P. falciparum (hml32a == 1): {int(((merged_matrix['hml32'] == 1) & (merged_matrix['hml32a'] == 1)).sum())} of {n_pos}")
 

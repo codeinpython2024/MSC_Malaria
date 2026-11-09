@@ -1,0 +1,33 @@
+================================================================================
+EXECUTION LOG: Diagnostic: SMOTE-NC Versus Class Weighting (Logistic Regression, Random Forest, SVM)
+Script: class_weight_comparison.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 49.17 seconds
+Exit Code: 0
+================================================================================
+
+==========================================================================================
+SMOTE-NC VERSUS CLASS WEIGHTING (LOGISTIC REGRESSION, RANDOM FOREST, SVM)
+==========================================================================================
+Training records: 194 (36 positive); test records: 49 (9 positive). No oversampling.
+Random Forest selected: {'max_depth': None, 'min_samples_split': 2, 'n_estimators': 100} (cross-validated macro F1 0.4809)
+SVM selected: {'C': 100, 'gamma': 0.01, 'kernel': 'poly'} (cross-validated macro F1 0.5034)
+Class-weighted SVM, test set: correlation of predict_proba with decision_function -0.995; ROC-AUC 0.3611 with predict_proba, 0.6389 with decision_function
+
+PRIMARY TEST SET (N = 49, 9 positive)
+Model                Method                   TN  FP  FN  TP    Acc%          Sens% [95% CI]   Spec%   Prec%  MacroF1  ROC-AUC  PR-AUC
+Logistic Regression  class_weight=balanced    25  15   6   3   57.14      33.33 [12.1, 64.6]   62.50   16.67   0.4632   0.4806  0.1820
+Logistic Regression  SMOTE-NC (reported)      30  10   7   2   65.31       22.22 [6.3, 54.7]   75.00   16.67   0.4848   0.6028  0.2374
+Random Forest        class_weight=balanced    30  10   7   2   65.31       22.22 [6.3, 54.7]   75.00   16.67   0.4848   0.5278  0.2048
+Random Forest        SMOTE-NC (reported)      31   9   6   3   69.39      33.33 [12.1, 64.6]   77.50   25.00   0.5455   0.5889  0.2717
+SVM                  class_weight=balanced    30  10   4   5   71.43      55.56 [26.7, 81.1]   75.00   33.33   0.6137   0.6389  0.3216
+SVM                  SMOTE-NC (reported)      26  14   5   4   61.22      44.44 [18.9, 73.3]   65.00   22.22   0.5143   0.6056  0.2788
+
+TEN RANDOM PARTITIONS (mean +/- SD)
+Model                Method                     Sensitivity %    Specificity %      Macro F1 %          ROC-AUC           PR-AUC
+Logistic Regression  class_weight=balanced      34.44 +/-15.23    59.75 +/-10.89   44.86 +/- 7.22   0.5000 +/-0.101   0.2286 +/-0.069
+Logistic Regression  SMOTE-NC (reported)        33.33 +/-16.56    69.25 +/- 9.93   49.41 +/- 6.21   0.5539 +/-0.085   0.2426 +/-0.046
+Random Forest        class_weight=balanced      10.00 +/- 8.20    80.25 +/- 6.82   44.91 +/- 5.00   0.4171 +/-0.087   0.1775 +/-0.025
+Random Forest        SMOTE-NC (reported)        25.56 +/-16.60    72.00 +/- 9.04   47.63 +/- 6.19   0.5175 +/-0.116   0.2531 +/-0.093
+SVM                  class_weight=balanced      28.89 +/-15.00    78.00 +/- 6.43   52.56 +/- 6.49   0.5375 +/-0.110   0.2684 +/-0.057
+SVM                  SMOTE-NC (reported)        43.33 +/-16.10    66.75 +/- 6.88   51.70 +/- 5.84   0.5893 +/-0.096   0.2647 +/-0.067

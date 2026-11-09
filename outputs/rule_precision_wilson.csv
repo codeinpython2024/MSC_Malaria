@@ -1,0 +1,15 @@
+Rule,Dataset,n,Correct,Precision_%,Wilson_low_%,Wilson_high_%
+Pathway C1: Age exactly 6 months (b19 <= 6),"Training (original rows only, N=194)",5,5,100.0,56.551753521682514,100.0
+Pathway C1: Age exactly 6 months (b19 <= 6),Test (N=49),1,1,100.0,20.654931437723747,100.0
+"Pathway C2: No radio, no net, protected well, metal/zinc roof","Training (original rows only, N=194)",35,11,31.428571428571427,18.550844674265818,47.979763612069185
+"Pathway C2: No radio, no net, protected well, metal/zinc roof",Test (N=49),9,2,22.22222222222222,6.322510711784671,54.74110308930111
+"Pathway C3: No radio, no net, surface-water source, no maternal education","Training (original rows only, N=194)",28,5,17.857142857142858,7.8785019456042775,35.591424789342945
+"Pathway C3: No radio, no net, surface-water source, no maternal education",Test (N=49),5,0,0.0,0.0,43.44824647831748
+"Pathway C4: No radio, no net, borehole or unprotected well, bamboo-with-mud walls","Training (original rows only, N=194)",17,6,35.294117647058826,17.309720397243744,58.69963651478132
+"Pathway C4: No radio, no net, borehole or unprotected well, bamboo-with-mud walls",Test (N=49),4,1,25.0,4.558726080970055,69.93581574175981
+"Pathway C5: No radio, net use, electricity, wealth quintile 2 (Poorer)","Training (original rows only, N=194)",1,1,100.0,20.654931437723747,100.0
+"Pathway C5: No radio, net use, electricity, wealth quintile 2 (Poorer)",Test (N=49),0,0,,,
+RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0],"Training (original rows only, N=194)",8,4,50.0,21.521606221387756,78.47839377861224
+RIPPER Rule R2: [v128=21^v129=31^b19=14.0-17.0],"Training (original rows only, N=194)",5,3,60.0,23.07242812760128,88.2379225767352
+RIPPER Rule R1: [v113=31^v127=34^v116=31^b4=2^v129=31^hml20=0],Test (N=49),2,0,0.0,0.0,65.76197724933469
+RIPPER Rule R2: [v128=21^v129=31^b19=14.0-17.0],Test (N=49),1,0,0.0,0.0,79.34506856227625

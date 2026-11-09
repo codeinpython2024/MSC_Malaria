@@ -1,0 +1,8 @@
+Rule,Description,Seeds,Exact_recurrence,Contains_nominal_conditions,Present_at_seed_42_exact
+C1,Age exactly 6 months (b19 <= 6),10,8,8,True
+C2,"No radio, no net, protected well, metal/zinc roof",10,1,1,True
+C3,"No radio, no net, surface-water source, no maternal education",10,1,1,True
+C4,"No radio, no net, borehole or unprotected well, bamboo-with-mud walls",10,1,1,True
+C5,"No radio, net use, electricity, wealth quintile 2 (Poorer)",10,1,1,True
+R1,b4=2 AND hml20=0 AND v113=31 AND v116=31 AND v127=34 AND v129=31,10,1,1,True
+R2,b19=14.0-17.0 AND v128=21 AND v129=31,10,1,3,True

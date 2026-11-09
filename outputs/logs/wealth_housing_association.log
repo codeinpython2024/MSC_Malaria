@@ -1,0 +1,25 @@
+================================================================================
+EXECUTION LOG: Diagnostic: Association Between Wealth Quintile and Housing and Water Variables
+Script: wealth_housing_association.py
+Python Runtime: 3.14.5 (C:\MSC_Malaria\.venv\Scripts\python.exe)
+Execution Duration: 370.87 seconds
+Exit Code: 0
+================================================================================
+
+==========================================================================================
+ASSOCIATION BETWEEN WEALTH QUINTILE (v190) AND HOUSING AND WATER VARIABLES
+==========================================================================================
+Children: 243; households: 139. Unweighted. Each variable was constant within every household.
+Permutation p-values: 10000 permutations of v190, seed 42.
+
+Variable                 Unit          n  Table       V  Corrected V   Perm. p
+Wall material            Household   139    4x8   0.489        0.439    0.0001
+Floor material           Household   139    4x7   0.458        0.413    0.0001
+Roof material            Household   139    4x4   0.431        0.410    0.0001
+Drinking-water source    Household   139    4x5   0.264        0.204    0.0055
+Toilet facility          Household   139    4x6   0.478        0.444    0.0001
+Wall material            Child       243    4x8   0.478        0.450    0.0001
+Floor material           Child       243    4x7   0.451        0.425    0.0001
+Roof material            Child       243    4x4   0.424        0.412    0.0001
+Drinking-water source    Child       243    4x5   0.286        0.257    0.0001
+Toilet facility          Child       243    4x6   0.464        0.444    0.0001

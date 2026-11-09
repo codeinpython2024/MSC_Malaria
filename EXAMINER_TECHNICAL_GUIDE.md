@@ -35,6 +35,7 @@ flowchart TD
     H -.->|"Diagnostic: class_weight_comparison.py"| M["SMOTE-NC versus class weighting"]
     K -.->|"Diagnostic: rule_stability.py"| N["Rule recurrence and Wilson intervals"]
     F -.->|"Diagnostic: ripper_trace.py"| O["RIPPER induction trace"]
+    C -.->|"Diagnostic: wealth_housing_association.py"| P["Wealth and housing association"]
 ```
 
 ---
@@ -149,7 +150,7 @@ The script reads the stored test predictions (`outputs/models/test_predictions.n
 
 ### Diagnostics outside Stages 0–11
 
-These three scripts are run separately ([REPRODUCIBILITY.md](REPRODUCIBILITY.md), Section 4).
+These four scripts are run separately ([REPRODUCIBILITY.md](REPRODUCIBILITY.md), Section 4).
 
 **SMOTE-NC versus class weighting (`class_weight_comparison.py`, Table 4.8.3).** Logistic regression, Random Forest and the SVM are trained with `class_weight='balanced'` and no oversampling, using the same preprocessing and search grids as Stage 6. On the 194 original training rows the grid search selected a Random Forest with 100 trees, no depth limit and `min_samples_split` 2, and a polynomial SVM with `C` 100 and `gamma` 0.01. As in Stage 8, these settings are reused for the ten seeds and logistic regression is not tuned. C4.5 and RIPPER are excluded because ChefBoost and Wittgenstein have no class-weight option. Threshold adjustment was not evaluated.
 
@@ -172,6 +173,16 @@ A C4.5 leaf counts only if training records reach it. The script also computes W
 | D. Delete rules that increase total description length | 13 distinct rules deleted, leaving R1 and R2 |
 
 Wittgenstein's RIPPER has no condition that stops at a 50% error rate. That check exists only in its separate IREP class, which the pipeline does not use.
+
+**Wealth and housing association (`wealth_housing_association.py`, Section 4.2.1).** The script measures how strongly wealth quintile (`v190`) is associated with wall, floor and roof material, drinking-water source and toilet facility. It reports Cramér's V and the bias-corrected V (Bergsma, 2013), with permutation p-values (10,000 permutations, seed 42). These are household attributes, so the thesis reports one record per household (139); the child-level values (243) are in the same output file. The analysis is unweighted. Part of the association is expected, because the wealth index is built partly from housing characteristics.
+
+| Wealth quintile with | Bias-corrected V (139 households) | Permutation p |
+| :--- | ---: | ---: |
+| Wall material | 0.439 | 0.0001 |
+| Floor material | 0.413 | 0.0001 |
+| Roof material | 0.410 | 0.0001 |
+| Toilet facility | 0.444 | 0.0001 |
+| Drinking-water source | 0.204 | 0.0055 |
 
 ---
 

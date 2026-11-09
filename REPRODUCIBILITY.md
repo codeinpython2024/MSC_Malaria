@@ -14,7 +14,7 @@ This guide explains how to regenerate every table and figure in Chapter 4 of the
 | Item | Location |
 | :--- | :--- |
 | Pipeline scripts (Stages 0–11) | `pre_process.py`, `first_stage.py`, `second_step.py`, `third_step.py`, `fourth_step.py`, `fifth_step.py`, `sixth_step.py`, `step7_multiseed_stability.py`, `step8_grouped_cluster_sensitivity.py`, `step9_rule_coverage_support.py`, `run_bootstrap_ci_final.py` |
-| Standalone diagnostics (run separately, see Section 4) | `class_weight_comparison.py`, `rule_stability.py`, `ripper_trace.py` |
+| Standalone diagnostics (run separately, see Section 4) | `class_weight_comparison.py`, `rule_stability.py`, `ripper_trace.py`, `wealth_housing_association.py` |
 | Shared C4.5 utilities | `c45_tree_utils.py` (parses the ChefBoost rules file, routes records, computes leaf scores, draws Figure 4.5 and Figure I.1) |
 | One-command runner | `generate_execution_logs.py` (runs all stages in order and writes one log per stage) |
 | Pinned environment | `requirements.txt`, `pyproject.toml`, `uv.lock` |
@@ -125,12 +125,13 @@ Paths in the last column are relative to `outputs/` unless they start at the rep
 
 ### Standalone diagnostics
 
-Three further scripts produce results reported in the thesis. `generate_execution_logs.py` does not run them, so run them yourself after Stages 3–10 (Option A or Option B):
+Four further scripts produce results reported in the thesis. `generate_execution_logs.py` does not run them, so run them yourself after Stages 3–10 (Option A or Option B):
 
 ```bash
 python class_weight_comparison.py
 python rule_stability.py
 python ripper_trace.py
+python wealth_housing_association.py
 ```
 
 | Script | Log | Main outputs | Needs |
@@ -138,6 +139,7 @@ python ripper_trace.py
 | `class_weight_comparison.py` | `class_weight_comparison.log` | `class_weight_comparison.csv`, `class_weight_multiseed.csv` | `X/Y_train_original.csv`, `X/Y_test.csv`, `final_malaria_sdoh_matrix.csv`, `test_point_metrics.csv`, `multiseed_stability_results.csv` |
 | `rule_stability.py` | `rule_stability.log` | `rule_stability_summary.csv`, `rule_stability_per_seed.csv`, `rule_precision_wilson.csv` | `final_malaria_sdoh_matrix.csv`, `c45_pathway_coverage_support.csv`, `ripper_rule_coverage_support.csv` |
 | `ripper_trace.py` | `ripper_trace.log` | The log only | `X/Y_train_resampled.csv` |
+| `wealth_housing_association.py` | `wealth_housing_association.log` | `wealth_housing_association.csv` | `final_malaria_sdoh_matrix.csv` |
 
 Each script writes its own log to `outputs/logs/`. `X/Y_train_original.csv` are not stored in the repository; `third_step.py` creates them.
 
@@ -152,6 +154,7 @@ Each script writes its own log to `outputs/logs/`. `X/Y_train_original.csv` are 
 | Figure 4.1 | Weighted prevalence by wealth, education, net use, floor | `second_step.py` | `plots/sdoh_prevalence.png` |
 | Table 4.6 | Train/test split and SMOTE-NC balance | `third_step.py` | `step3_partition.log` |
 | Table 4.7 | Hyperparameter search spaces and selected values | `fifth_step.py` | `models/best_params.json`, `step5_black_box_baselines.log` |
+| Section 4.2.1 | Association of wealth quintile with housing, water and sanitation variables (bias-corrected Cramér's V) | `wealth_housing_association.py` | `wealth_housing_association.csv` |
 | Table 4.8 | Test-set metrics with Wilson and bootstrap 95% intervals | `sixth_step.py`, `run_bootstrap_ci_final.py` | `test_point_metrics.csv`, `table_4_8_bootstrap_ci.csv` |
 | Table 4.8.1 | 10-seed stability (mean, SD, range) | `step7_multiseed_stability.py` | `multiseed_stability_results.csv` |
 | Table 4.8.2 | Stratified, household-grouped and cluster-grouped 5-fold CV | `step8_grouped_cluster_sensitivity.py` | `grouped_cluster_sensitivity_results.csv` |
@@ -169,7 +172,7 @@ Each script writes its own log to `outputs/logs/`. `X/Y_train_original.csv` are 
 | Figure 4.6 | Complexity versus macro F1 | `sixth_step.py` | `plots/interpretability_vs_accuracy.png` |
 | Figure I.1 | Complete C4.5 tree | `fourth_step.py` | `plots/decision_tree_full.png` |
 
-Appendices A–J of the thesis reproduce the scripts. Appendix A covers Stages 0–2, Appendices B–H cover `third_step.py` to `step9_rule_coverage_support.py`, Appendix I is `c45_tree_utils.py`, and Appendix J is `run_bootstrap_ci_final.py`. The three standalone diagnostics are not reproduced in the appendices; the thesis cites them by name.
+Appendices A–J of the thesis reproduce the scripts. Appendix A covers Stages 0–2, Appendices B–H cover `third_step.py` to `step9_rule_coverage_support.py`, Appendix I is `c45_tree_utils.py`, and Appendix J is `run_bootstrap_ci_final.py`. The four standalone diagnostics are not reproduced in the appendices; the thesis cites them by name.
 
 ---
 

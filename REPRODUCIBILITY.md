@@ -14,6 +14,7 @@ This guide explains how to regenerate every table and figure in Chapter 4 of the
 | Item | Location |
 | :--- | :--- |
 | Pipeline scripts (Stages 0–11) | `pre_process.py`, `first_stage.py`, `second_step.py`, `third_step.py`, `fourth_step.py`, `fifth_step.py`, `sixth_step.py`, `step7_multiseed_stability.py`, `step8_grouped_cluster_sensitivity.py`, `step9_rule_coverage_support.py`, `run_bootstrap_ci_final.py` |
+| Standalone diagnostics (run separately, see Section 4) | `class_weight_comparison.py`, `rule_stability.py`, `ripper_trace.py` |
 | Shared C4.5 utilities | `c45_tree_utils.py` (parses the ChefBoost rules file, routes records, computes leaf scores, draws Figure 4.5 and Figure I.1) |
 | One-command runner | `generate_execution_logs.py` (runs all stages in order and writes one log per stage) |
 | Pinned environment | `requirements.txt`, `pyproject.toml`, `uv.lock` |
@@ -122,6 +123,24 @@ python run_bootstrap_ci_final.py
 
 Paths in the last column are relative to `outputs/` unless they start at the repository root.
 
+### Standalone diagnostics
+
+Three further scripts produce results reported in the thesis. `generate_execution_logs.py` does not run them, so run them yourself after Stages 3–10 (Option A or Option B):
+
+```bash
+python class_weight_comparison.py
+python rule_stability.py
+python ripper_trace.py
+```
+
+| Script | Log | Main outputs | Needs |
+| :--- | :--- | :--- | :--- |
+| `class_weight_comparison.py` | `class_weight_comparison.log` | `class_weight_comparison.csv`, `class_weight_multiseed.csv` | `X/Y_train_original.csv`, `X/Y_test.csv`, `final_malaria_sdoh_matrix.csv`, `test_point_metrics.csv`, `multiseed_stability_results.csv` |
+| `rule_stability.py` | `rule_stability.log` | `rule_stability_summary.csv`, `rule_stability_per_seed.csv`, `rule_precision_wilson.csv` | `final_malaria_sdoh_matrix.csv`, `c45_pathway_coverage_support.csv`, `ripper_rule_coverage_support.csv` |
+| `ripper_trace.py` | `ripper_trace.log` | The log only | `X/Y_train_resampled.csv` |
+
+Each script writes its own log to `outputs/logs/`. `X/Y_train_original.csv` are not stored in the repository; `third_step.py` creates them.
+
 ---
 
 ## 5. Where each thesis result comes from
@@ -136,9 +155,13 @@ Paths in the last column are relative to `outputs/` unless they start at the rep
 | Table 4.8 | Test-set metrics with Wilson and bootstrap 95% intervals | `sixth_step.py`, `run_bootstrap_ci_final.py` | `test_point_metrics.csv`, `table_4_8_bootstrap_ci.csv` |
 | Table 4.8.1 | 10-seed stability (mean, SD, range) | `step7_multiseed_stability.py` | `multiseed_stability_results.csv` |
 | Table 4.8.2 | Stratified, household-grouped and cluster-grouped 5-fold CV | `step8_grouped_cluster_sensitivity.py` | `grouped_cluster_sensitivity_results.csv` |
+| Table 4.8.3 | SMOTE-NC versus class weighting (logistic regression, Random Forest, SVM) | `class_weight_comparison.py` | `class_weight_comparison.csv`, `class_weight_multiseed.csv` |
 | Table 4.9 | Model complexity | `sixth_step.py` | `tradeoff_matrix.csv` |
 | Table 4.10 | C4.5 named pathways C1–C5: support, coverage, precision, recall | `step9_rule_coverage_support.py` | `c45_pathway_coverage_support.csv` |
 | Table 4.11 | RIPPER rules: support, coverage, precision, recall | `step9_rule_coverage_support.py` | `ripper_rule_coverage_support.csv` |
+| Tables 4.10 and 4.11, Prec. column | Wilson 95% intervals for rule precision (Real and Test rows) | `rule_stability.py` | `rule_precision_wilson.csv` |
+| Table 4.11.1 and Section 4.2.4.2 | Recurrence of the reported rules across ten partitions | `rule_stability.py` | `rule_stability_summary.csv`, `rule_stability_per_seed.csv`, `logs/rule_stability.log` |
+| Algorithm 3.2 and Section 4.2.4.3 | RIPPER induction phases (15 rules grown, 13 deleted by the final description-length step) | `ripper_trace.py` | `logs/ripper_trace.log` |
 | Figure 4.2 | Performance bar chart | `sixth_step.py` | `plots/model_performance_comparison.png` |
 | Figure 4.3 | Confusion matrices | `sixth_step.py` | `plots/confusion_matrices.png` |
 | Figure 4.4 | ROC curves | `sixth_step.py` | `plots/roc_comparison.png` |
@@ -146,13 +169,13 @@ Paths in the last column are relative to `outputs/` unless they start at the rep
 | Figure 4.6 | Complexity versus macro F1 | `sixth_step.py` | `plots/interpretability_vs_accuracy.png` |
 | Figure I.1 | Complete C4.5 tree | `fourth_step.py` | `plots/decision_tree_full.png` |
 
-Appendices A–J of the thesis reproduce the scripts. Appendix A covers Stages 0–2, Appendices B–H cover `third_step.py` to `step9_rule_coverage_support.py`, Appendix I is `c45_tree_utils.py`, and Appendix J is `run_bootstrap_ci_final.py`.
+Appendices A–J of the thesis reproduce the scripts. Appendix A covers Stages 0–2, Appendices B–H cover `third_step.py` to `step9_rule_coverage_support.py`, Appendix I is `c45_tree_utils.py`, and Appendix J is `run_bootstrap_ci_final.py`. The three standalone diagnostics are not reproduced in the appendices; the thesis cites them by name.
 
 ---
 
 ## 6. Determinism
 
-All random steps use fixed seeds: the train/test split, SMOTE-NC, model fitting, cross-validation shuffling and the bootstrap (seed 42 throughout; the multi-seed analysis uses seeds 10, 20, 30, 42, 50, 60, 70, 80, 90 and 100). Repeated full runs on the environment above reproduced byte-identical cohort and split files and an identical C4.5 rules file. Each log also records the run's duration and the Python path, which naturally change between runs and machines. Results on other platforms or package versions have not been checked.
+All random steps use fixed seeds: the train/test split, SMOTE-NC, model fitting, cross-validation shuffling and the bootstrap (seed 42 throughout; the multi-seed analysis and the ten-partition parts of the standalone diagnostics use seeds 10, 20, 30, 42, 50, 60, 70, 80, 90 and 100). Repeated full runs on the environment above reproduced byte-identical cohort and split files and an identical C4.5 rules file. Each log also records the run's duration and the Python path, which naturally change between runs and machines. Results on other platforms or package versions have not been checked.
 
 ---
 
@@ -165,6 +188,6 @@ These files are not run by `generate_execution_logs.py`. Treat `outputs/*.csv` a
 | `app.py` | Utility for parsing DHS `.MAP` layout files; not used by the pipeline |
 | `scratch_test_c45_complexity.py`, `scratch_test_ripper.py` | Development scratch tests |
 | `outputs/decision_tree_plot.png` | Copy of `outputs/plots/decision_tree_plot.png` |
-| `docx_content.txt`, `Comprehensive Data Analysis Pathway_ From Preprocessing to Chapter 4.docx` | Earlier drafting material |
+| `docx_content.txt` | Earlier drafting material |
 
 Notes and scripts from earlier drafts (step walkthroughs, a C4.5/CART discrepancy note, an earlier bootstrap script and a thesis-patching script) were removed because their figures predated the current results. They remain in the git history.

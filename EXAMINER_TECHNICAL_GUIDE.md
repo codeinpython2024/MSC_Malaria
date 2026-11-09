@@ -32,6 +32,9 @@ flowchart TD
     C -->|"Stage 9: step8_grouped_cluster_sensitivity.py"| J["Grouped 5-fold CV"]
     F -->|"Stage 10: step9_rule_coverage_support.py"| K["Rule support and coverage"]
     H -->|"Stage 11: run_bootstrap_ci_final.py"| L["Wilson and bootstrap 95% CIs"]
+    H -.->|"Diagnostic: class_weight_comparison.py"| M["SMOTE-NC versus class weighting"]
+    K -.->|"Diagnostic: rule_stability.py"| N["Rule recurrence and Wilson intervals"]
+    F -.->|"Diagnostic: ripper_trace.py"| O["RIPPER induction trace"]
 ```
 
 ---
@@ -53,6 +56,7 @@ The script reads the Children's Recode (KR) and the Household Member Recode (PR)
 | Merged with PR on `hv001`, `hv002`, `hvidx` | all 245 matched | 245 |
 | Microscopy result available | `hml32` in {0, 1} | 243 |
 | Bed-net record available | `hml20` in {0, 1} | 243 |
+| No duplicate child records | unique `hv001`, `hv002`, `hvidx` (0 duplicates) | 243 |
 
 Notes:
 
@@ -143,6 +147,32 @@ The script asserts that its RIPPER rule matching reproduces `ripper.predict` exa
 
 The script reads the stored test predictions (`outputs/models/test_predictions.npz`). It computes Wilson score 95% intervals (without continuity correction) for accuracy, sensitivity, specificity, precision and negative predictive value. It computes non-parametric bootstrap percentile intervals for every metric (B = 1,000, seed 42); the thesis reports the bootstrap intervals for F1, macro F1, ROC-AUC and PR-AUC. All models are scored on the same bootstrap resamples, and a resample containing only one class is redrawn.
 
+### Diagnostics outside Stages 0–11
+
+These three scripts are run separately ([REPRODUCIBILITY.md](REPRODUCIBILITY.md), Section 4).
+
+**SMOTE-NC versus class weighting (`class_weight_comparison.py`, Table 4.8.3).** Logistic regression, Random Forest and the SVM are trained with `class_weight='balanced'` and no oversampling, using the same preprocessing and search grids as Stage 6. On the 194 original training rows the grid search selected a Random Forest with 100 trees, no depth limit and `min_samples_split` 2, and a polynomial SVM with `C` 100 and `gamma` 0.01. As in Stage 8, these settings are reused for the ten seeds and logistic regression is not tuned. C4.5 and RIPPER are excluded because ChefBoost and Wittgenstein have no class-weight option. Threshold adjustment was not evaluated.
+
+The class-weighted SVM's ROC-AUC and PR-AUC use `decision_function` scores. Its `predict_proba` scores were inverted relative to them (correlation −0.995 on the test set), giving a ROC-AUC of 0.3611 instead of 0.6389. The script logs both values.
+
+**Rule stability and precision intervals (`rule_stability.py`, Tables 4.10, 4.11 and 4.11.1).** C4.5 and RIPPER are refitted on the ten partitions of Stage 8, with SMOTE-NC on each training split. For each reported rule the script counts the partitions in which it recurs in two ways:
+
+* **Exact:** the same conditions, including RIPPER's age bin.
+* **Nominal conditions contained:** a rule of the same class contains all of the reported rule's nominal conditions, possibly with others.
+
+A C4.5 leaf counts only if training records reach it. The script also computes Wilson 95% intervals for rule precision on the original training records and the test set. It gives none for the resampled records, because synthetic records are not independent observations.
+
+**RIPPER induction trace (`ripper_trace.py`, Algorithm 3.2, Section 4.2.4.3).** The script refits the Stage 5 RIPPER model with Wittgenstein's verbose output switched on and asserts that the traced fit gives the same rule set as a silent fit. `outputs/logs/ripper_trace.log` records four phases:
+
+| Phase | Result |
+| :--- | :--- |
+| A. Grow the initial rule set | 15 rules grown; stopped by the description-length limit (70.9 bits against an allowance of 64) |
+| B. Optimisation (`k = 2`) | No changes; halted at the first iteration |
+| C. Cover remaining positives | New rules only repeated existing ones |
+| D. Delete rules that increase total description length | 13 distinct rules deleted, leaving R1 and R2 |
+
+Wittgenstein's RIPPER has no condition that stops at a 50% error rate. That check exists only in its separate IREP class, which the pipeline does not use.
+
 ---
 
 ## 4. Key results
@@ -194,6 +224,19 @@ Mean ROC-AUC over 5 folds:
 
 Performance is weak under all three schemes, and grouping by household or cluster does not cause a consistent drop. The grouped schemes therefore give no evidence that household or cluster leakage inflated the row-split results. Equally, there was little performance to inflate.
 
+### SMOTE-NC versus class weighting (`outputs/class_weight_comparison.csv`, `outputs/class_weight_multiseed.csv`, Table 4.8.3)
+
+| Model | Method | Reported split: sensitivity % | Reported split: macro F1 % | Reported split: ROC-AUC | 10 seeds: sensitivity % (mean ± SD) | 10 seeds: macro F1 % (mean) | 10 seeds: ROC-AUC (mean) |
+| :--- | :--- | ---: | ---: | ---: | :--- | ---: | ---: |
+| Logistic regression | SMOTE-NC | 22.22 | 48.48 | 0.6028 | 33.33 ± 16.56 | 49.41 | 0.5539 |
+| Logistic regression | Class weights | 33.33 | 46.32 | 0.4806 | 34.44 ± 15.23 | 44.86 | 0.5000 |
+| Random Forest | SMOTE-NC | 33.33 | 54.55 | 0.5889 | 25.56 ± 16.60 | 47.63 | 0.5175 |
+| Random Forest | Class weights | 22.22 | 48.48 | 0.5278 | 10.00 ± 8.20 | 44.91 | 0.4171 |
+| SVM | SMOTE-NC | 44.44 | 51.43 | 0.6056 | 43.33 ± 16.10 | 51.70 | 0.5893 |
+| SVM | Class weights | 55.56 | 61.37 | 0.6389 | 28.89 ± 15.00 | 52.56 | 0.5375 |
+
+Class weighting gives no consistent gain. On the reported split the class-weighted SVM detected five of nine infections against four with SMOTE-NC, but over ten partitions SMOTE-NC had the higher mean ROC-AUC for all three models and the higher mean sensitivity for the Random Forest and the SVM. The standard deviations overlap widely and no formal test was performed.
+
 ### Rule precision on real versus synthetic records (Tables 4.10 and 4.11)
 
 The base rate in the 194 original training records is 36/194 = 18.56%.
@@ -208,6 +251,20 @@ The base rate in the 194 original training records is 36/194 = 18.56%.
 | RIPPER R2 | 17, 88.24% | 5, 60.00% | 1, 0.00% |
 
 Most of the apparent precision on the resampled set comes from synthetic records. Pathway C1 (`b19 <= 6`, predicting negative) covers the six 6-month-old children noted in Stage 5.
+
+### Rule recurrence and precision intervals (`outputs/rule_stability_summary.csv`, `outputs/rule_precision_wilson.csv`, Tables 4.10, 4.11 and 4.11.1)
+
+| Rule | Exact recurrence (of 10 partitions) | Nominal conditions contained (of 10) | Original records: correct/n, precision [Wilson 95% CI] | Test: correct/n, precision [Wilson 95% CI] |
+| :--- | ---: | ---: | :--- | :--- |
+| C4.5 C1 | 8 | 8 | 5/5, 100.00% [56.6, 100.0] | 1/1, 100.00% [20.7, 100.0] |
+| C4.5 C2 | 1 | 1 | 11/35, 31.43% [18.6, 48.0] | 2/9, 22.22% [6.3, 54.7] |
+| C4.5 C3 | 1 | 1 | 5/28, 17.86% [7.9, 35.6] | 0/5, 0.00% [0.0, 43.4] |
+| C4.5 C4 | 1 | 1 | 6/17, 35.29% [17.3, 58.7] | 1/4, 25.00% [4.6, 69.9] |
+| C4.5 C5 | 1 | 1 | 1/1, 100.00% [20.7, 100.0] | 0/0, n/a |
+| RIPPER R1 | 1 | 1 | 4/8, 50.00% [21.5, 78.5] | 0/2, 0.00% [0.0, 65.8] |
+| RIPPER R2 | 1 | 3 | 3/5, 60.00% [23.1, 88.2] | 0/1, 0.00% [0.0, 79.3] |
+
+Pathways C2–C5 and rules R1 and R2 recurred exactly only at seed 42, the partition from which they were induced. Pathway C1 recurs in eight partitions because it reflects the cohort's minimum age, not a stable risk pattern. RIPPER induced 2 to 7 rules (mean 4.9), and C4.5 reached 17 to 39 leaves. Individual variables were steadier than their combinations (`outputs/logs/rule_stability.log`).
 
 ---
 
@@ -227,13 +284,16 @@ Most of the apparent precision on the resampled set comes from synthetic records
 | PR-AUC (Section 6) | Stage 7; Table 4.8 |
 | Rule support and coverage (Sections 6–7) | Stage 10; Tables 4.10 and 4.11 |
 | Correct the C4.5 ROC (Section 6) | Stage 7; Chapter 3 Step 7; Figure 4.4 |
+| Compare SMOTE-NC with at least one alternative (Section 5) | `class_weight_comparison.py`; Table 4.8.3 (class weighting for three learners; threshold adjustment not evaluated) |
+| Rule confidence intervals and stability (Sections 7 and 10) | `rule_stability.py`; Tables 4.10, 4.11 and 4.11.1 |
 
 ---
 
 ## 6. Limitations of the computational evidence
 
 * **Small test set.** The test set has 49 children and 9 positives, so all test metrics have wide intervals (Section 4).
-* **Single tree and rule set.** The rules in Tables 4.10 and 4.11 come from one fit on one oversampled training set. Their stability across seeds was not assessed; only the models' metrics were.
+* **Single tree and rule set.** The rules in Tables 4.10 and 4.11 come from one fit on one oversampled training set. Refitting on ten partitions showed that the positive pathways and rules recurred exactly only in the reported split (Table 4.11.1), so they should be read as properties of that split.
+* **Imbalance methods.** Class weighting was compared with SMOTE-NC only for logistic regression, the Random Forest and the SVM, without a formal test. Threshold adjustment was not evaluated.
 * **Synthetic records.** SMOTE-NC creates attribute combinations that may not occur in real households, and the rules' precision on real records is much lower than on the resampled set.
 * **ChefBoost behaviour.** There is no post-pruning, only a limited set of numeric thresholds is tried, and fallback leaves are written for unseen category values. The unbalanced root split on age is a product of these choices.
 * **Survey design.** Survey weights and design are ignored in modelling, and no design-based standard errors are reported for the descriptive estimates.

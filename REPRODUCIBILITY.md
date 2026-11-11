@@ -1,6 +1,6 @@
 # Reproducibility Guide
 
-**Thesis:** A Social Determinants Analysis of Malaria Risk in Rural Nasarawa State Using Transparent Rule-Based Logic (MSc Computer Science)
+**Thesis:** Transparent Rule-Based Modelling of Childhood Malaria Using Social Determinants of Health in Rural Nasarawa State, Nigeria (MSc Computer Science)
 **Data:** 2021 Nigeria Malaria Indicator Survey (NMIS), rural Nasarawa State, children aged 6–59 months (N = 243)
 **Revised thesis file:** `Full_Work_revised_3.docx` (not stored in this repository)
 **Companion document:** [EXAMINER_TECHNICAL_GUIDE.md](EXAMINER_TECHNICAL_GUIDE.md) explains the methods and results stage by stage.

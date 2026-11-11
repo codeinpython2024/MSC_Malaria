@@ -1,6 +1,6 @@
 # Technical Guide for Examiners
 
-**Thesis:** A Social Determinants Analysis of Malaria Risk in Rural Nasarawa State Using Transparent Rule-Based Logic (MSc Computer Science)
+**Thesis:** Transparent Rule-Based Modelling of Childhood Malaria Using Social Determinants of Health in Rural Nasarawa State, Nigeria (MSc Computer Science)
 **Revised thesis file:** `Full_Work_revised_3.docx`
 **How to run the code:** [REPRODUCIBILITY.md](REPRODUCIBILITY.md)
 
